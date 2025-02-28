@@ -1,21 +1,423 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* AMOLED theme colors */
+  --amoled-black: #000000;
+  --dark-gray: #121212;
+  --gray-900: #171717;
+  --gray-800: #1e1e1e;
+  --gray-700: #262626;
+  --gray-600: #333333;
+  --gray-500: #494949;
+  --gray-400: #808080;
+  --gray-300: #a0a0a0;
+  --gray-200: #c0c0c0;
+  --gray-100: #e0e0e0;
+  --white: #ffffff;
+  
+  /* Neon accent colors */
+  --neon-red: #ff2d55;
+  --neon-red-glow: rgba(255, 45, 85, 0.6);
+  --neon-cyan: #00ffff;
+  --neon-cyan-glow: rgba(0, 255, 255, 0.6);
+  --neon-purple: #bf5af2;
+  --neon-purple-glow: rgba(191, 90, 242, 0.6);
+  --neon-blue: #0a84ff;
+  --neon-blue-glow: rgba(10, 132, 255, 0.6);
+  --neon-green: #4caf50;
+  --neon-green-glow: rgba(76, 175, 80, 0.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Base styles */
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background-color: var(--amoled-black);
+  color: var(--white);
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Noto Serif JP', serif;
+}
+
+/* Gradient text */
+.text-gradient-red-purple {
+  background: linear-gradient(90deg, var(--neon-red), var(--neon-purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-cyan-blue {
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Futuristic card */
+.cyber-card-dark {
+  @apply relative bg-gray-900 border border-gray-800 overflow-hidden transition-all duration-300;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.cyber-card-dark:hover {
+  @apply border-gray-700;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+}
+
+/* Neon text */
+.text-glow {
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+/* Neon shadows */
+.shadow-neon-red {
+  box-shadow: 0 0 5px var(--neon-red-glow), 0 0 10px var(--neon-red-glow);
+}
+
+.shadow-neon-cyan {
+  box-shadow: 0 0 5px var(--neon-cyan-glow), 0 0 10px var(--neon-cyan-glow);
+}
+
+.shadow-neon-purple {
+  box-shadow: 0 0 5px var(--neon-purple-glow), 0 0 10px var(--neon-purple-glow);
+}
+
+.shadow-neon-blue {
+  box-shadow: 0 0 5px var(--neon-blue-glow), 0 0 10px var(--neon-blue-glow);
+}
+
+.shadow-neon-subtle {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.8), 0 0 2px var(--neon-cyan-glow);
+}
+
+/* Neon buttons */
+.neon-button-red {
+  @apply relative overflow-hidden;
+  background: linear-gradient(45deg, #330000, #660000);
+  border: 1px solid var(--neon-red);
+  box-shadow: 0 0 5px var(--neon-red-glow), inset 0 0 5px var(--neon-red-glow);
+  transition: all 0.3s ease;
+}
+
+.neon-button-red:hover, .neon-button-red:focus {
+  background: linear-gradient(45deg, #660000, #990000);
+  box-shadow: 0 0 10px var(--neon-red-glow), inset 0 0 10px var(--neon-red-glow);
+}
+
+.neon-button-cyan {
+  @apply relative overflow-hidden;
+  background: linear-gradient(45deg, #003333, #006666);
+  border: 1px solid var(--neon-cyan);
+  box-shadow: 0 0 5px var(--neon-cyan-glow), inset 0 0 5px var(--neon-cyan-glow);
+  transition: all 0.3s ease;
+}
+
+.neon-button-cyan:hover, .neon-button-cyan:focus {
+  background: linear-gradient(45deg, #006666, #009999);
+  box-shadow: 0 0 10px var(--neon-cyan-glow), inset 0 0 10px var(--neon-cyan-glow);
+}
+
+.neon-button-outline-cyan {
+  @apply relative overflow-hidden;
+  background: transparent;
+  border: 1px solid var(--neon-cyan);
+  box-shadow: 0 0 5px var(--neon-cyan-glow);
+  transition: all 0.3s ease;
+}
+
+.neon-button-outline-cyan:hover, .neon-button-outline-cyan:focus {
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 10px var(--neon-cyan-glow), inset 0 0 10px var(--neon-cyan-glow);
+}
+
+/* Cyber badges */
+.cyber-badge-red {
+  @apply px-3 py-1 text-sm inline-flex items-center;
+  background: rgba(255, 45, 85, 0.2);
+  border: 1px solid var(--neon-red);
+  color: white;
+  box-shadow: 0 0 5px var(--neon-red-glow);
+}
+
+.cyber-badge-cyan {
+  @apply px-3 py-1 text-sm inline-flex items-center;
+  background: rgba(0, 255, 255, 0.2);
+  border: 1px solid var(--neon-cyan);
+  color: white;
+  box-shadow: 0 0 5px var(--neon-cyan-glow);
+}
+
+.cyber-badge-purple {
+  @apply px-3 py-1 text-sm inline-flex items-center;
+  background: rgba(191, 90, 242, 0.2);
+  border: 1px solid var(--neon-purple);
+  color: white;
+  box-shadow: 0 0 5px var(--neon-purple-glow);
+}
+
+.cyber-gradient {
+  background: linear-gradient(45deg, rgba(255, 45, 85, 0.2), rgba(0, 255, 255, 0.2), rgba(191, 90, 242, 0.2));
+}
+
+/* Japanese vertical text */
+.text-vertical-right {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.2em;
+}
+
+.text-vertical-left {
+  writing-mode: vertical-lr;
+  text-orientation: upright;
+  letter-spacing: 0.2em;
+}
+
+/* Border gradient */
+.border-gradient-vertical {
+  position: relative;
+}
+
+.border-gradient-vertical:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--neon-cyan), var(--neon-red), var(--neon-purple));
+}
+
+/* Scanlines */
+.bg-scan-lines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+/* Cyber particles animation */
+.cyber-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 30%, var(--neon-red-glow) 0%, transparent 8px),
+    radial-gradient(circle at 75% 60%, var(--neon-cyan-glow) 0%, transparent 8px),
+    radial-gradient(circle at 40% 80%, var(--neon-purple-glow) 0%, transparent 8px),
+    radial-gradient(circle at 80% 15%, var(--neon-blue-glow) 0%, transparent 8px);
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  opacity: 0.15;
+  animation: float 60s linear infinite;
+}
+
+@keyframes float {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+/* Animation keyframes */
+@keyframes pattern-shift {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes expand {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Add this to Tailwind config */
+@layer utilities {
+  .hover-lift {
+    @apply transition-transform duration-300;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+  /* Neon text shadow utilities */
+  .text-shadow-neon {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+  .text-shadow-red {
+    text-shadow: 0 0 5px var(--neon-red-glow), 0 0 10px var(--neon-red-glow);
+  }
+  .text-shadow-cyan {
+    text-shadow: 0 0 5px var(--neon-cyan-glow), 0 0 10px var(--neon-cyan-glow);
+  }
+  .text-shadow-purple {
+    text-shadow: 0 0 5px var(--neon-purple-glow), 0 0 10px var(--neon-purple-glow);
+  }
+}
+
+/* Input shadows for focus states */
+.focus\:shadow-input-cyan:focus {
+  box-shadow: 0 4px 10px -2px rgba(0, 255, 255, 0.2);
+}
+
+.focus\:shadow-input-red:focus {
+  box-shadow: 0 4px 10px -2px rgba(255, 45, 85, 0.2);
+}
+
+/* Animation for form appearance */
+@keyframes form-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-form-appear {
+  animation: form-appear 0.8s ease-out forwards;
+}
+
+/* Glitch effect for error messages */
+@keyframes glitch {
+  0% {
+    clip-path: inset(40% 0 61% 0);
+    transform: translate(-2px, 2px);
+  }
+  20% {
+    clip-path: inset(92% 0 1% 0);
+    transform: translate(1px, 2px);
+  }
+  40% {
+    clip-path: inset(43% 0 1% 0);
+    transform: translate(2px, -2px);
+  }
+  60% {
+    clip-path: inset(25% 0 58% 0);
+    transform: translate(-2px, -1px);
+  }
+  80% {
+    clip-path: inset(54% 0 7% 0);
+    transform: translate(2px, -1px);
+  }
+  100% {
+    clip-path: inset(58% 0 43% 0);
+    transform: translate(-2px, 2px);
+  }
+}
+
+.error-message-glitch::before,
+.error-message-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 45, 85, 0.1);
+}
+
+.error-message-glitch::before {
+  animation: glitch 3s infinite linear alternate-reverse;
+  color: rgba(255, 45, 85, 0.8);
+  z-index: -2;
+}
+
+.error-message-glitch::after {
+  animation: glitch 2s infinite linear alternate-reverse;
+  color: rgba(255, 45, 85, 0.8);
+  z-index: -1;
+}
+
+/* Scanline animation */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 255, 255, 0.1),
+    transparent
+  );
+  opacity: 0.4;
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+}
+
+/* Custom animated focused input styles */
+.input-animated:focus-within::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-red));
+  animation: expand 0.5s ease-out forwards;
+}
+
+/* Data corruption effect for texts */
+@keyframes data-corruption {
+  0%, 100% { opacity: 1; transform: none; }
+  7% { transform: translate(2px, 3px); }
+  10% { transform: translate(-1px, -3px); }
+  20% { transform: skewX(10deg); }
+  50% { transform: none; opacity: 0.8; }
+  60% { transform: skewX(5deg); }
+  70% { transform: none; }
+}
+
+.data-corruption:hover {
+  animation: data-corruption 2s ease-in-out;
 }
