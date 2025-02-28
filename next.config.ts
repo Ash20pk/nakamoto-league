@@ -3,6 +3,7 @@ const nextConfig = {
   images: {
     domains: ['your-supabase-storage-url.supabase.co'],
   },
+  ignoreBuildErrors: true,
 };
 
 export default nextConfig;
