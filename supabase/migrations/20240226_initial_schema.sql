@@ -82,6 +82,7 @@ CREATE TABLE battles (
   challenger_id UUID NOT NULL REFERENCES warriors(id),
   defender_id UUID NOT NULL REFERENCES warriors(id),
   status battle_status NOT NULL DEFAULT 'PENDING',
+  status_history JSONB[] DEFAULT '{}'::JSONB[],
   winner_id UUID REFERENCES warriors(id),
   battle_data JSONB DEFAULT '{}'::JSONB,
   metadata JSONB DEFAULT '{}'::JSONB,
@@ -136,6 +137,8 @@ CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX idx_notifications_read ON notifications(read);
 CREATE INDEX idx_tournament_participants_tournament_id ON tournament_participants(tournament_id);
 CREATE INDEX idx_tournament_participants_warrior_id ON tournament_participants(warrior_id);
+CREATE INDEX idx_battle_submissions_battle ON battle_submissions(battle_id, warrior_id);
+CREATE INDEX idx_achievements_warrior ON achievements(warrior_id, achieved_at);
 
 -- Enable RLS on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -309,6 +312,16 @@ USING (
 );
 
 -- Battle Submissions Policies
+CREATE POLICY "Warriors can submit to their battles"
+ON battle_submissions FOR INSERT
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM battles 
+    WHERE id = battle_submissions.battle_id
+    AND (challenger_id = auth.uid() OR defender_id = auth.uid())
+  )
+);
+
 CREATE POLICY "Battle submissions are viewable by participants and tournament organizers" 
 ON battle_submissions FOR SELECT 
 USING (
@@ -324,16 +337,6 @@ USING (
                 AND t.organizer_id = auth.uid()
             ))
         )
-    )
-);
-
-CREATE POLICY "Users can submit for their warriors" 
-ON battle_submissions FOR INSERT 
-WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM warriors
-        WHERE id = battle_submissions.warrior_id
-        AND owner_id = auth.uid()
     )
 );
 
@@ -493,4 +496,25 @@ USING (
         WHERE id = auth.uid()
         AND is_admin = TRUE
     )
+);
+
+-- Add updated_at triggers
+CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add battle history trigger
+CREATE TRIGGER set_battle_updated
+BEFORE UPDATE ON battles
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
+-- Add tournament date validation
+ALTER TABLE tournaments ADD CONSTRAINT valid_dates CHECK (
+  start_date > registration_deadline 
+  AND end_date > start_date
 );

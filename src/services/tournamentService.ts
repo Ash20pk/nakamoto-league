@@ -1,6 +1,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/database.types';
 import type { TournamentFormat } from '@/lib/database.types';
+import { BaseService } from './baseService';
 
 export interface CreateTournamentDTO {
   title: string;
@@ -36,7 +37,11 @@ export interface TournamentFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
-export const tournamentService = {
+export class TournamentService extends BaseService<'tournaments'> {
+  constructor() {
+    super('tournaments');
+  }
+
   async createTournament(data: CreateTournamentDTO, userId: string) {
     const supabase = createClientComponentClient<Database>();
     
@@ -68,7 +73,7 @@ export const tournamentService = {
       console.error('Error creating tournament:', error);
       throw error;
     }
-  },
+  }
 
   async uploadTournamentBanner(file: File, userId: string) {
     const supabase = createClientComponentClient<Database>();
@@ -94,7 +99,7 @@ export const tournamentService = {
       console.error('Error uploading banner:', error);
       throw error;
     }
-  },
+  }
 
   async getTournament(id: string) {
     const supabase = createClientComponentClient<Database>();
@@ -111,7 +116,7 @@ export const tournamentService = {
       // Get participants count
       const { count, error: countError } = await supabase
         .from('tournament_participants')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true})
         .eq('tournament_id', id);
         
       if (countError) throw countError;
@@ -124,7 +129,7 @@ export const tournamentService = {
       console.error('Error fetching tournament:', error);
       throw error;
     }
-  },
+  }
 
   async getTournaments(filters: TournamentFilters = {}) {
     const supabase = createClientComponentClient<Database>();
@@ -227,7 +232,7 @@ export const tournamentService = {
       console.error('Error fetching tournaments:', error);
       throw error;
     }
-  },
+  }
 
   async updateTournament(id: string, data: Partial<CreateTournamentDTO>, userId: string) {
     const supabase = createClientComponentClient<Database>();
@@ -275,7 +280,7 @@ export const tournamentService = {
       console.error('Error updating tournament:', error);
       throw error;
     }
-  },
+  }
 
   async registerForTournament(tournamentId: string, warriorId: string) {
     const supabase = createClientComponentClient<Database>();
@@ -300,7 +305,7 @@ export const tournamentService = {
       // Check if tournament is full
       const { count, error: countError } = await supabase
         .from('tournament_participants')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true})
         .eq('tournament_id', tournamentId);
         
       if (countError) throw countError;
@@ -341,7 +346,7 @@ export const tournamentService = {
       console.error('Error registering for tournament:', error);
       throw error;
     }
-  },
+  }
 
   async withdrawFromTournament(tournamentId: string, warriorId: string) {
     const supabase = createClientComponentClient<Database>();
@@ -377,7 +382,7 @@ export const tournamentService = {
       console.error('Error withdrawing from tournament:', error);
       throw error;
     }
-  },
+  }
 
   async getTournamentParticipants(tournamentId: string) {
     const supabase = createClientComponentClient<Database>();
@@ -411,7 +416,7 @@ export const tournamentService = {
       console.error('Error fetching tournament participants:', error);
       throw error;
     }
-  },
+  }
 
   async startTournament(tournamentId: string, userId: string) {
     const supabase = createClientComponentClient<Database>();
@@ -463,4 +468,4 @@ export const tournamentService = {
       throw error;
     }
   }
-};
+}
