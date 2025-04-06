@@ -77,22 +77,27 @@ const DojosPage = () => {
 
         // Get warrior counts for each dojo
         const dojoIds = data?.map(dojo => dojo.id) || [];
-        const { data: warriorCounts, error: countError } = await supabase
-          .from('warriors')
-          .select(`
-            dojo_id,
-            count:count(*)
-          `)
-          .in('dojo_id', dojoIds)
-          .group('dojo_id');
-
-        if (countError) throw countError;
-
-        // Map warrior counts to dojos
+        // Get warrior counts for each dojo
         const countMap = new Map();
-        warriorCounts?.forEach(item => {
-          countMap.set(item.dojo_id, parseInt(item.count));
-        });
+        if (data && data.length > 0) {
+          const dojoIds = data.map(dojo => dojo.id);
+          
+          // Query warriors for these dojos
+          const { data: warriors, error: warriorsError } = await supabase
+            .from('warriors')
+            .select('dojo_id')
+            .in('dojo_id', dojoIds);
+          
+          if (warriorsError) throw warriorsError;
+          
+          // Count warriors for each dojo manually
+          warriors?.forEach(warrior => {
+            if (warrior.dojo_id) {
+              const currentCount = countMap.get(warrior.dojo_id) || 0;
+              countMap.set(warrior.dojo_id, currentCount + 1);
+            }
+          });
+}
 
         // Transform data to match our Dojo interface
         const transformedData: Dojo[] = data?.map((dojo, index) => ({

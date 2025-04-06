@@ -21,13 +21,13 @@ export class DojoService extends BaseService<'dojos'> {
   }
 
   async createDojo(data: CreateDojoDTO, userId: string) {
+    // Extract fields that aren't directly in the database schema
+    const { socialLinks, tags, ...dojoData } = data;
+    
+    // Create the dojo with only the fields that exist in the database
     return this.create({
-      ...data,
-      owner_id: userId,
-      metadata: {
-        socialLinks: data.socialLinks,
-        tags: data.tags
-      }
+      ...dojoData,
+      owner_id: userId
     });
   }
 

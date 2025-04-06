@@ -1,5 +1,5 @@
 // src/hooks/useWarrior.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import type { WarriorSpecialty } from '@/lib/database.types';
 
@@ -70,7 +70,7 @@ export function useWarrior() {
   const [currentWarrior, setCurrentWarrior] = useState<Warrior | null>(null);
 
   // Fetch a list of warriors
-  const fetchWarriors = async (filters: WarriorFilters = {}) => {
+  const fetchWarriors = useCallback(async (filters: WarriorFilters = {}) => {
     setLoadingWarriors(true);
     setError(null);
 
@@ -85,12 +85,14 @@ export function useWarrior() {
       if (filters.limit) params.append('limit', filters.limit.toString());
 
       const response = await fetch(`/api/warriors?${params.toString()}`);
-      const data = await response.json();
-
+      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch warriors');
+        // Handle non-200 responses
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error fetching warriors: ${response.status}`);
       }
-
+      
+      const data = await response.json();
       setWarriors(data.warriors);
       setWarriorCount(data.count);
       return data as WarriorList;
@@ -100,21 +102,23 @@ export function useWarrior() {
     } finally {
       setLoadingWarriors(false);
     }
-  };
+  }, []);
 
   // Fetch a single warrior by ID
-  const fetchWarrior = async (id: string) => {
+  const fetchWarrior = useCallback(async (id: string) => {
     setLoadingSingleWarrior(true);
     setError(null);
 
     try {
       const response = await fetch(`/api/warriors/${id}`);
-      const data = await response.json();
-
+      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch warrior');
+        // Handle non-200 responses
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error fetching warrior: ${response.status}`);
       }
-
+      
+      const data = await response.json();
       setCurrentWarrior(data);
       return data as Warrior;
     } catch (err) {
@@ -123,7 +127,7 @@ export function useWarrior() {
     } finally {
       setLoadingSingleWarrior(false);
     }
-  };
+  }, []);
 
   // Create a new warrior
   const createWarrior = async (formData: WarriorFormData) => {
@@ -139,12 +143,13 @@ export function useWarrior() {
         body: JSON.stringify(formData)
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create warrior');
+        // Handle non-200 responses
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error creating warrior: ${response.status}`);
       }
-
+      
+      const data = await response.json();
       return data as Warrior;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -168,12 +173,13 @@ export function useWarrior() {
         body: JSON.stringify(formData)
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update warrior');
+        // Handle non-200 responses
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error updating warrior: ${response.status}`);
       }
-
+      
+      const data = await response.json();
       setCurrentWarrior(data);
       return data as Warrior;
     } catch (err) {
@@ -198,11 +204,13 @@ export function useWarrior() {
         body: formData
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload avatar');
+        // Handle non-200 responses
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error uploading avatar: ${response.status}`);
       }
+      
+      const data = await response.json();
 
       // Update the current warrior with the new avatar URL
       if (currentWarrior) {
@@ -235,11 +243,13 @@ export function useWarrior() {
         body: JSON.stringify({ dojoId })
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to join dojo');
+        // Handle non-200 responses
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error joining dojo: ${response.status}`);
       }
+      
+      const data = await response.json();
 
       // Update the current warrior with the new dojo
       if (currentWarrior) {
@@ -267,11 +277,13 @@ export function useWarrior() {
         method: 'DELETE'
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to leave dojo');
+        // Handle non-200 responses
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error leaving dojo: ${response.status}`);
       }
+      
+      const data = await response.json();
 
       // Update the current warrior with no dojo
       if (currentWarrior) {
@@ -297,11 +309,22 @@ export function useWarrior() {
         try {
           const response = await fetch(`/api/user/warrior`);
           
-          if (response.ok) {
-            const data = await response.json();
-            // This would typically update the auth state
-            // but that's handled by your AuthProvider
+          // If the response is 404, it just means the user doesn't have a warrior yet
+          // No need to log an error
+          if (response.status === 404) {
+            console.log('User does not have a warrior yet');
+            return;
           }
+          
+          if (!response.ok) {
+            console.error(`Error checking warrior: ${response.status}`);
+            return;
+          }
+          
+          const data = await response.json();
+          // This would typically update the auth state
+          // but that's handled by your AuthProvider
+          console.log('Found user warrior:', data);
         } catch (err) {
           console.error('Error checking for warrior:', err);
         }

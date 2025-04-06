@@ -15,13 +15,14 @@ interface AuthState {
   profile: Profile | null;
   warrior: Warrior | null;
   dojo: Dojo | null;
+  accountType: 'warrior' | 'dojo' | null;
   loading: boolean;
 }
 
 interface AuthContextType {
   authState: AuthState;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, accountType: 'warrior' | 'dojo') => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile: null,
     warrior: null,
     dojo: null,
+    accountType: null,
     loading: true,
   });
 
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile: null,
         warrior: null,
         dojo: null,
+        accountType: null,
         loading: false,
       });
       return;
@@ -62,6 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileError) throw profileError;
 
+      // Extract account type from user metadata
+      const accountType = user.user_metadata?.account_type as 'warrior' | 'dojo' | null;
+
       // Fetch warrior if profile exists
       let warrior = null;
       if (profile) {
@@ -69,9 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('warriors')
           .select('*')
           .eq('owner_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (!warriorError) {
+        if (!warriorError || warriorError.code !== 'PGRST116') { // PGRST116 means no rows returned
           warrior = warriorData;
         }
       }
@@ -83,9 +89,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('dojos')
           .select('*')
           .eq('owner_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (!dojoError) {
+        if (!dojoError || dojoError.code !== 'PGRST116') { // PGRST116 means no rows returned
           dojo = dojoData;
         }
       }
@@ -95,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         warrior,
         dojo,
+        accountType,
         loading: false,
       });
     } catch (error) {
@@ -104,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile: null,
         warrior: null,
         dojo: null,
+        accountType: null,
         loading: false,
       });
     }
@@ -131,6 +139,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
   }, [supabase, router]);
 
+  // After auth state changes, check if we need to redirect to registration pages
+  useEffect(() => {
+    // Only proceed if auth state has loaded and we have a user
+    if (!authState.loading && authState.user) {
+      const { accountType, warrior, dojo } = authState;
+      
+      // If user is on a login/register page, redirect them to dashboard or registration
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith('/login') || currentPath.startsWith('/register') || currentPath === '/') {
+        // If user has chosen warrior but doesn't have one, redirect to warrior registration
+        if (accountType === 'warrior' && !warrior) {
+          router.push('/dashboard/warriors/register');
+        } 
+        // If user has chosen dojo but doesn't have one, redirect to dojo registration
+        else if (accountType === 'dojo' && !dojo) {
+          router.push('/dashboard/dojos/register');
+        }
+        // Otherwise, go to the dashboard
+        else {
+          router.push('/dashboard');
+        }
+      }
+    }
+  }, [authState, router]);
+
   const signIn = async (email: string, password: string) => {
     setAuthState((prev) => ({ ...prev, loading: true }));
     try {
@@ -141,19 +174,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       await fetchUserData(data.user);
-      router.push('/');
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, accountType: 'warrior' | 'dojo') => {
     setAuthState((prev) => ({ ...prev, loading: true }));
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            account_type: accountType
+          }
+        }
       });
 
       if (error) throw error;
@@ -176,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile: null,
         warrior: null,
         dojo: null,
+        accountType: null,
         loading: false,
       });
       router.push('/');

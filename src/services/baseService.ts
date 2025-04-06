@@ -1,4 +1,4 @@
-import { createBrowserSupabaseClient } from '@/lib/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/lib/database.types';
 
 type TableName = keyof Database['public']['Tables'];
@@ -12,7 +12,7 @@ export abstract class BaseService<T extends TableName> {
   }
 
   protected getClient() {
-    return createBrowserSupabaseClient<Database>();
+    return createClientComponentClient<Database>();
   }
 
   async create(data: Omit<TableRow<T>, 'id' | 'created_at' | 'updated_at'>): Promise<TableRow<T>> {

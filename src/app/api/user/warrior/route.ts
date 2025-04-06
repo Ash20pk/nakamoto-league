@@ -6,7 +6,8 @@ import type { Database } from '@/lib/database.types';
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
     // Check if user is authenticated
     const { data: { session }, error: authError } = await supabase.auth.getSession();

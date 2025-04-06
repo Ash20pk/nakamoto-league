@@ -6,7 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { MapPin, Globe, Twitter, Github, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
-import { dojoService } from '@/services/dojoService';
+import { DojoService } from '@/services/dojoService';
 
 interface RegisterDojoForm {
   name: string;
@@ -111,21 +111,24 @@ export default function RegisterDojoPage() {
       setLoading(true);
       setError(null);
 
+      // Create DojoService instance
+      const dojoService = new DojoService();
+
       // Upload banner if selected
-      let bannerUrl = null;
+      let bannerUrl: string | undefined = undefined;
       if (bannerFile) {
         bannerUrl = await dojoService.uploadDojoBanner(bannerFile, authState.user.id);
       }
 
-      // Create dojo
+      // Create dojo with only the fields that exist in the database schema
       const dojo = await dojoService.createDojo({
         name: formData.name,
         description: formData.description,
         location: formData.location,
-        specialization: formData.specialization,
-        banner_url: bannerUrl || undefined,
+        banner_url: bannerUrl,
+        // These fields will be extracted in the service and not sent to the database
         socialLinks: formData.socialLinks,
-        tags: formData.tags
+        tags: formData.tags,
       }, authState.user.id);
 
       // Redirect to dojo profile

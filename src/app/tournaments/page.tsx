@@ -79,13 +79,6 @@ const TournamentsPage = () => {
           query = query.ilike('title', `%${searchTerm}%`);
         }
 
-        // Apply status filter
-        if (filters.status) {
-          // Need to calculate status based on dates
-          // This would ideally be done with database functions
-          // For now, we'll fetch all and filter client-side
-        }
-
         // Apply format filter
         if (filters.format) {
           query = query.eq('format', filters.format);
@@ -109,24 +102,28 @@ const TournamentsPage = () => {
 
         if (fetchError) throw fetchError;
 
-        // Get participant counts
+        // Get tournament IDs to fetch participant counts
         const tournamentIds = data?.map(t => t.id) || [];
-        const { data: participantCounts, error: countError } = await supabase
-          .from('tournament_participants')
-          .select(`
-            tournament_id,
-            count:count(*)
-          `)
-          .in('tournament_id', tournamentIds)
-          .group('tournament_id');
-
-        if (countError) throw countError;
-
-        // Map participant counts
+        
+        // Create a map to hold participant counts
         const countMap = new Map();
-        participantCounts?.forEach(item => {
-          countMap.set(item.tournament_id, parseInt(item.count));
-        });
+        
+        // Fetch participant counts if there are tournaments
+        if (tournamentIds.length > 0) {
+          // Fetch all participants for these tournaments
+          const { data: participants, error: countError } = await supabase
+            .from('tournament_participants')
+            .select('tournament_id')
+            .in('tournament_id', tournamentIds);
+            
+          if (countError) throw countError;
+          
+          // Count participants per tournament
+          participants?.forEach(item => {
+            const currentCount = countMap.get(item.tournament_id) || 0;
+            countMap.set(item.tournament_id, currentCount + 1);
+          });
+        }
 
         // Transform to our Tournament interface
         const now = new Date();

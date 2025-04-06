@@ -55,27 +55,19 @@ export default function RegisterPage() {
     }
 
     try {
-      // Sign up with Supabase
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            username: formData.username,
-            account_type: formData.accountType
-          }
-        }
-      });
+      // Sign up with Supabase using the proper account type
+      const accountType = formData.accountType as 'warrior' | 'dojo';
+      await signUp(formData.email, formData.password, accountType);
 
-      if (signUpError) throw signUpError;
-
-      if (data?.user) {
-        // Create profile
+      // Create profile
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (userData?.user) {
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
             {
-              id: data.user.id,
+              id: userData.user.id,
               username: formData.username,
               full_name: null,
               avatar_url: null
@@ -86,6 +78,8 @@ export default function RegisterPage() {
 
         // Show success message
         setSuccess(true);
+        
+        // Redirect to login page after a short delay
         setTimeout(() => {
           router.push('/login');
         }, 3000);
