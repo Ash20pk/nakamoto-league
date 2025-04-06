@@ -6,7 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { Upload } from 'lucide-react';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
-import { warriorService } from '@/services/warriorService';
+import { useWarrior } from '@/hooks/useWarrior';
 import type { WarriorSpecialty } from '@/lib/database.types';
 
 interface RegisterWarriorForm {
@@ -23,8 +23,9 @@ interface RegisterWarriorForm {
 export default function RegisterWarriorPage() {
   const router = useRouter();
   const { authState } = useAuth();
+  const { createWarrior, uploadAvatar, error: warriorError, creating, uploadingAvatar } = useWarrior();
   
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
@@ -43,6 +44,12 @@ export default function RegisterWarriorPage() {
       router.push('/dashboard');
     }
   }, [authState.warrior, router]);
+
+  useEffect(() => {
+    if (warriorError) {
+      setError(warriorError);
+    }
+  }, [warriorError]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,23 +86,25 @@ export default function RegisterWarriorPage() {
     if (!authState.user) return;
 
     try {
-      setIsSubmitting(true);
+      setFormSubmitting(true);
       setError(null);
 
-      // Upload avatar if provided
-      let avatarUrl = null;
-      if (avatarFile) {
-        avatarUrl = await warriorService.uploadWarriorAvatar(avatarFile, authState.user.id);
-      }
-
       // Create warrior
-      await warriorService.createWarrior({
+      const warrior = await createWarrior({
         name: formData.name,
         specialty: formData.specialty,
-        avatar_url: avatarUrl,
         bio: formData.bio,
         socialLinks: formData.socialLinks
-      }, authState.user.id);
+      });
+
+      if (!warrior) {
+        throw new Error("Failed to create warrior");
+      }
+
+      // Upload avatar if provided
+      if (avatarFile && warrior) {
+        await uploadAvatar(warrior.id, avatarFile);
+      }
 
       // Redirect to dashboard
       router.push('/dashboard');
@@ -103,9 +112,11 @@ export default function RegisterWarriorPage() {
       console.error('Error registering warrior:', err);
       setError(err instanceof Error ? err.message : 'Failed to register warrior');
     } finally {
-      setIsSubmitting(false);
+      setFormSubmitting(false);
     }
   };
+
+  const isSubmitting = formSubmitting || creating || uploadingAvatar;
 
   if (authState.loading) {
     return (
@@ -259,6 +270,7 @@ export default function RegisterWarriorPage() {
               type="button"
               onClick={() => router.back()}
               className="px-6 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-300 hover:bg-slate-800/70 transition-colors"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
