@@ -27,7 +27,11 @@ export class DojoService extends BaseService<'dojos'> {
     // Create the dojo with only the fields that exist in the database
     return this.create({
       ...dojoData,
-      owner_id: userId
+      owner_id: userId,
+      metadata: {
+        socialLinks,
+        tags
+      }
     });
   }
 
@@ -51,16 +55,26 @@ export class DojoService extends BaseService<'dojos'> {
   }
 
   async getDojo(id: string) {
+    // Use the select parameter to specify the join
     return this.getById(id, '*, profiles(*)');
   }
 
   async getDojosByOwner(userId: string) {
+    const cacheKey = `${this.tableName}:owner:${userId}`;
+    const cached = BaseService.cache.get<any[]>(cacheKey);
+    
+    if (cached) return cached;
+
     const { data, error } = await this.getClient()
       .from(this.tableName)
-      .select()
+      .select('*')
       .eq('owner_id', userId);
 
     if (error) throw error;
+    
+    // Cache the result
+    BaseService.cache.set(cacheKey, data);
+    
     return data;
   }
 
@@ -71,12 +85,25 @@ export class DojoService extends BaseService<'dojos'> {
       throw new Error('Unauthorized: You can only update your own dojo');
     }
 
+    // Extract fields that aren't directly in the database schema
+    const { socialLinks, tags, ...updateData } = data;
+    
+    // Prepare metadata update
+    const metadata = {
+      ...(dojo.metadata || {}),
+      ...(socialLinks ? { socialLinks } : {}),
+      ...(tags ? { tags } : {})
+    };
+
+    // Update the dojo with the prepared data
     return this.update(id, {
-      ...data,
-      metadata: {
-        socialLinks: data.socialLinks,
-        tags: data.tags
-      }
+      ...updateData,
+      metadata
     });
+  }
+  
+  // Add a method to invalidate cache for specific owner
+  invalidateOwnerCache(userId: string) {
+    BaseService.cache.invalidate(`${this.tableName}:owner:${userId}`);
   }
 }

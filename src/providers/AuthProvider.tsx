@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       await fetchUserData(session?.user || null);
-
+  
       // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (_event, session) => {
@@ -130,12 +130,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           router.refresh();
         }
       );
-
+  
       return () => {
         subscription.unsubscribe();
       };
     };
-
+  
     initializeAuth();
   }, [supabase, router]);
 
