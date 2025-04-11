@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Trophy, Users, MapPin, ExternalLink, Zap, Shield, Search, Filter } from 'lucide-react';
+import { Trophy, Users, MapPin, ExternalLink, Zap, Shield, Search, Filter, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
@@ -152,180 +152,183 @@ const DojosPage = () => {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto px-8 py-8">
-        <div className="flex flex-col md:flex-row justify-end items-center mb-8 mt-12 gap-4">
+      <div className="container mx-auto px-4 py-8 mt-16">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-white">Dojos</h1>
+        </div>
 
-          <div className="flex gap-4 w-full md:w-auto">
-            <div className="relative flex-1 md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        {/* Search and Filters */}
+        <div className="mb-8">
+          <form onSubmit={(e) => { e.preventDefault(); }} className="flex gap-4 mb-8">
+            <div className="flex-1 relative">
               <input
                 type="text"
-                className="w-full bg-slate-800/50 border border-purple-500/20 rounded-lg py-2 pl-10 pr-4 text-slate-200 focus:outline-none focus:border-purple-500/50"
                 placeholder="Search dojos..."
                 value={searchTerm}
                 onChange={handleSearchChange}
+                className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-800/50 border border-purple-500/20 text-slate-200 focus:outline-none focus:border-purple-500/50"
               />
+              <Search className="absolute left-3 top-2.5 text-slate-400" size={20} />
             </div>
-
-            <button 
-              className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors"
-              onClick={() => setShowFilters(!showFilters)}
+            <button
+              type="submit"
+              className="px-4 py-2 neon-button-red rounded-lg text-white"
             >
-              <Filter className="w-5 h-5 text-slate-400" />
+              Search
             </button>
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg flex items-center gap-2 hover:bg-slate-800/70 text-slate-300"
+            >
+              <Filter size={20} />
+              Filters
+              <ChevronDown size={16} className={showFilters ? 'rotate-180' : ''} />
+            </button>
+          </form>
 
-            {authState.user && (
-              <Link
-                href="/dashboard/dojos/register"
-                className="px-6 py-2 cyber-badge-purple rounded-lg text-white hover:opacity-90 transition-opacity whitespace-nowrap"
-              >
-                Register Dojo
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {showFilters && (
-          <div className="mb-6 p-4 bg-slate-800/50 border border-purple-500/20 rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Sort By</label>
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => handleFilterChange('sortBy', e.target.value as any)}
-                  className="w-full p-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-200"
-                >
-                  <option value="rank">Rank</option>
-                  <option value="powerLevel">Power Level</option>
-                  <option value="totalWarriors">Total Warriors</option>
-                  <option value="winRate">Win Rate</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Sort Order</label>
-                <select
-                  value={filters.sortOrder}
-                  onChange={(e) => handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')}
-                  className="w-full p-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-200"
-                >
-                  <option value="desc">Highest First</option>
-                  <option value="asc">Lowest First</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-900/30 border border-red-500/20 rounded-lg p-4 text-red-400 mb-6">
-            {error}
-          </div>
-        )}
-
-        {loading && dojos.length === 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-slate-800/50 rounded-lg overflow-hidden border border-purple-500/20 animate-pulse">
-                <div className="h-48 bg-slate-700/50" />
-                <div className="p-6 space-y-4">
-                  <div className="h-6 bg-slate-700/50 rounded w-3/4" />
-                  <div className="h-4 bg-slate-700/50 rounded w-1/2" />
-                  <div className="h-4 bg-slate-700/50 rounded w-2/3" />
+          {showFilters && (
+            <div className="mb-6 p-4 bg-slate-800/50 border border-purple-500/20 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-300">Sort By</label>
+                  <select
+                    value={filters.sortBy}
+                    onChange={(e) => handleFilterChange('sortBy', e.target.value as any)}
+                    className="w-full p-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-200"
+                  >
+                    <option value="rank">Rank</option>
+                    <option value="powerLevel">Power Level</option>
+                    <option value="totalWarriors">Total Warriors</option>
+                    <option value="winRate">Win Rate</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-300">Sort Order</label>
+                  <select
+                    value={filters.sortOrder}
+                    onChange={(e) => handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')}
+                    className="w-full p-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-200"
+                  >
+                    <option value="desc">Highest First</option>
+                    <option value="asc">Lowest First</option>
+                  </select>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-900/30 border border-red-500/20 rounded-lg p-4 text-red-400 mb-6">
+              {error}
+            </div>
+          )}
+
+          {loading && dojos.length === 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {dojos.map((dojo) => (
-                <Link
-                  key={dojo.id}
-                  href={`/dojos/${dojo.id}`}
-                  className="bg-slate-800/50 rounded-lg overflow-hidden hover:bg-slate-700/50 transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 group"
-                >
-                  <div className="relative h-48">
-                    <div className="w-full h-full relative">
-                      <Image
-                        src={dojo.banner}
-                        alt={dojo.name}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent" />
-                    
-                    {dojo.rank && (
-                      <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 backdrop-blur-sm">
-                        #{dojo.rank}
-                      </div>
-                    )}
-                    
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
-                        {dojo.name}
-                      </h2>
-                      <div className="flex items-center gap-4 text-sm text-slate-300">
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4 text-blue-400" />
-                          <span>{dojo.totalWarriors.toLocaleString()} Warriors</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Trophy className="w-4 h-4 text-yellow-400" />
-                          <span>{dojo.winRate}% Win Rate</span>
-                        </div>
-                      </div>
-                    </div>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-slate-800/50 rounded-lg overflow-hidden border border-purple-500/20 animate-pulse">
+                  <div className="h-48 bg-slate-700/50" />
+                  <div className="p-6 space-y-4">
+                    <div className="h-6 bg-slate-700/50 rounded w-3/4" />
+                    <div className="h-4 bg-slate-700/50 rounded w-1/2" />
+                    <div className="h-4 bg-slate-700/50 rounded w-2/3" />
                   </div>
-
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 text-sm text-slate-400 mb-4">
-                      <MapPin className="w-4 h-4" />
-                      <span>{dojo.location}</span>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-emerald-400" />
-                        <span className="text-sm text-slate-400">Specialization: {dojo.specialization}</span>
-                      </div>
-                      
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Zap className="w-4 h-4 text-purple-400" />
-                          <span className="text-sm text-slate-400">Power Level</span>
-                        </div>
-                        <PowerLevelBar level={dojo.powerLevel} />
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="text-2xl font-bold text-purple-400">
-                            {dojo.powerLevel.toLocaleString()}
-                          </div>
-                          <div className="flex items-center gap-1 text-purple-400 group-hover:translate-x-1 transition-transform">
-                            <span className="text-sm font-medium">View Details</span>
-                            <ExternalLink className="w-4 h-4" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
+                </div>
               ))}
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {dojos.map((dojo) => (
+                  <Link
+                    key={dojo.id}
+                    href={`/dojos/${dojo.id}`}
+                    className="bg-slate-800/50 rounded-lg overflow-hidden hover:bg-slate-700/50 transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 group"
+                  >
+                    <div className="relative h-48">
+                      <div className="w-full h-full relative">
+                        <Image
+                          src={dojo.banner}
+                          alt={dojo.name}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent" />
+                      
+                      {dojo.rank && (
+                        <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 backdrop-blur-sm">
+                          #{dojo.rank}
+                        </div>
+                      )}
+                      
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
+                          {dojo.name}
+                        </h2>
+                        <div className="flex items-center gap-4 text-sm text-slate-300">
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4 text-blue-400" />
+                            <span>{dojo.totalWarriors.toLocaleString()} Warriors</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Trophy className="w-4 h-4 text-yellow-400" />
+                            <span>{dojo.winRate}% Win Rate</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-            {dojos.length < totalDojos && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loading}
-                  className="px-6 py-3 bg-slate-800/50 border border-purple-500/20 rounded-lg text-purple-400 hover:bg-slate-700/50 transition-colors disabled:opacity-50"
-                >
-                  {loading ? 'Loading...' : 'Load More'}
-                </button>
+                    <div className="p-6">
+                      <div className="flex items-center gap-2 text-sm text-slate-400 mb-4">
+                        <MapPin className="w-4 h-4" />
+                        <span>{dojo.location}</span>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-emerald-400" />
+                          <span className="text-sm text-slate-400">Specialization: {dojo.specialization}</span>
+                        </div>
+                        
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Zap className="w-4 h-4 text-purple-400" />
+                            <span className="text-sm text-slate-400">Power Level</span>
+                          </div>
+                          <PowerLevelBar level={dojo.powerLevel} />
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="text-2xl font-bold text-purple-400">
+                              {dojo.powerLevel.toLocaleString()}
+                            </div>
+                            <div className="flex items-center gap-1 text-purple-400 group-hover:translate-x-1 transition-transform">
+                              <span className="text-sm font-medium">View Details</span>
+                              <ExternalLink className="w-4 h-4" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            )}
-          </>
-        )}
+
+              {dojos.length < totalDojos && (
+                <div className="mt-8 text-center">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loading}
+                    className="px-6 py-3 bg-slate-800/50 border border-purple-500/20 rounded-lg text-purple-400 hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Loading...' : 'Load More'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </>
   );

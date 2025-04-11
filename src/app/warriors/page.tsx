@@ -75,8 +75,8 @@ const WarriorsPage = () => {
     <>
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mt-8 mb-8">
-          {/* Add any page header content here */}
+        <div className="flex justify-between items-center mt-16 mb-8">
+          <h1 className="text-2xl font-bold text-white">Warriors</h1>
         </div>
 
         <div className="mb-8">
@@ -93,7 +93,7 @@ const WarriorsPage = () => {
             </div>
             <button
               type="submit"
-              className="px-4 py-2 cyber-gradient rounded-lg text-white"
+              className="px-4 py-2 neon-button-red rounded-lg text-white"
             >
               Search
             </button>

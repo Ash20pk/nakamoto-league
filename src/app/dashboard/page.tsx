@@ -220,7 +220,7 @@ export default function Dashboard() {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content area (2/3 width on large screens) */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 mt-16">
           {/* Welcome Message */}
           <div className="p-6 bg-gray-900/40 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
@@ -434,7 +434,7 @@ export default function Dashboard() {
         </div>
         
         {/* Sidebar (1/3 width on large screens) */}
-        <div className="space-y-6">
+        <div className="space-y-6 mt-16">
           {/* Platform Stats */}
           <div className="bg-gray-900/40 backdrop-blur-sm rounded-lg border border-gray-800 p-4">
             <h2 className="text-lg font-bold text-white mb-4">Nakamoto League Stats</h2>

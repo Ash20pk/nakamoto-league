@@ -231,18 +231,13 @@ const TournamentsPage = () => {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mt-8 mb-8">
-          {authState.user && authState.warrior && (
-            <Link
-              href="/dashboard/tournaments/create"
-              className="px-4 py-2 cyber-gradient rounded-lg text-white hover:opacity-90 transition-opacity"
-            >
-              Create Tournament
-            </Link>
-          )}
+      <div className="container mx-auto px-4 py-8 mt-16">
+        {/* Page Header with Create Button */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-white">Tournaments</h1>
         </div>
 
+        {/* Search and Filters */}
         <div className="mb-8">
           <div className="flex gap-4 mb-4">
             <div className="flex-1 relative">
@@ -255,6 +250,12 @@ const TournamentsPage = () => {
               />
               <Search className="absolute left-3 top-2.5 text-slate-400" size={20} />
             </div>
+            <button
+              type="submit"
+              className="px-4 py-2 neon-button-red rounded-lg text-white"
+            >
+              Search
+            </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="px-4 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg flex items-center gap-2 hover:bg-slate-800/70 text-slate-300"
@@ -319,86 +320,105 @@ const TournamentsPage = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tournaments.map(tournament => (
-            <div
-              key={tournament.id}
-              className="bg-slate-800/50 rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform border border-purple-500/20 hover:border-purple-500/40"
-              onClick={() => router.push(`/tournaments/${tournament.id}`)}
-            >
-              <div className="relative h-48">
-                <div className="w-full h-full relative">
-                  <Image
-                    src={tournament.banner || '/images/default-tournament.jpg'}
-                    alt={tournament.title}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                </div>
-                <div className="absolute top-4 right-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(tournament.status)}`}>
-                    {tournament.status}
-                  </span>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/90 to-transparent p-4">
-                  <h3 className="text-white font-bold text-lg">{tournament.title}</h3>
-                  <p className="text-gray-200 text-sm">
-                    {tournament.format.replace('_', ' ')}
-                  </p>
+          {loading && tournaments.length === 0 ? (
+            // Loading skeletons
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="bg-slate-800/50 rounded-lg shadow-lg overflow-hidden border border-purple-500/20 animate-pulse">
+                <div className="h-48 bg-slate-700/50"></div>
+                <div className="p-4 space-y-3">
+                  <div className="h-6 bg-slate-700/50 rounded w-3/4"></div>
+                  <div className="h-4 bg-slate-700/50 rounded w-1/2"></div>
+                  <div className="h-4 bg-slate-700/50 rounded w-2/3"></div>
+                  <div className="h-10 bg-slate-700/50 rounded"></div>
                 </div>
               </div>
-              
-              <div className="p-4">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-1">
-                    <Calendar size={16} className="text-slate-400" />
-                    <span className="text-sm text-slate-300">
-                      {format(new Date(tournament.startDate), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users size={16} className="text-slate-400" />
-                    <span className="text-sm text-slate-300">
-                      {tournament.currentParticipants}/{tournament.maxParticipants}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <Trophy size={20} className="text-yellow-500" />
-                  <div>
-                    <p className="font-bold text-lg text-slate-200">
-                      {tournament.prize.amount.toLocaleString()} {tournament.prize.currency}
-                    </p>
-                    <p className="text-sm text-slate-400">{tournament.prize.description}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <Coins size={16} className="text-slate-400" />
-                  <span className="text-sm text-slate-300">
-                    Entry Fee: {tournament.entryFee > 0 ? `${tournament.entryFee} credits` : 'Free'}
-                  </span>
-                </div>
-
-                {tournament.status === 'UPCOMING' && (
-                  <button
-                    onClick={(e) => registerForTournament(tournament.id, e)}
-                    className="w-full cyber-gradient py-2 rounded pixel-corners text-white font-medium hover:opacity-90 transition-opacity"
-                  >
-                    Register Now
-                  </button>
-                )}
-              </div>
+            ))
+          ) : tournaments.length === 0 ? (
+            <div className="col-span-3 text-center py-10">
+              <p className="text-slate-400 text-lg">No tournaments found matching your criteria.</p>
             </div>
-          ))}
+          ) : (
+            tournaments.map(tournament => (
+              <div
+                key={tournament.id}
+                className="bg-slate-800/50 rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform border border-purple-500/20 hover:border-purple-500/40"
+                onClick={() => router.push(`/tournaments/${tournament.id}`)}
+              >
+                <div className="relative h-48">
+                  <div className="w-full h-full relative">
+                    <Image
+                      src={tournament.banner || '/images/default-tournament.jpg'}
+                      alt={tournament.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                  <div className="absolute top-4 right-4">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(tournament.status)}`}>
+                      {tournament.status}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/90 to-transparent p-4">
+                    <h3 className="text-white font-bold text-lg">{tournament.title}</h3>
+                    <p className="text-gray-200 text-sm">
+                      {tournament.format.replace('_', ' ')}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="p-4">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-1">
+                      <Calendar size={16} className="text-slate-400" />
+                      <span className="text-sm text-slate-300">
+                        {format(new Date(tournament.startDate), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users size={16} className="text-slate-400" />
+                      <span className="text-sm text-slate-300">
+                        {tournament.currentParticipants}/{tournament.maxParticipants}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    <Trophy size={20} className="text-yellow-500" />
+                    <div>
+                      <p className="font-bold text-lg text-slate-200">
+                        {tournament.prize.amount.toLocaleString()} {tournament.prize.currency}
+                      </p>
+                      <p className="text-sm text-slate-400">{tournament.prize.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    <Coins size={16} className="text-slate-400" />
+                    <span className="text-sm text-slate-300">
+                      Entry Fee: {tournament.entryFee > 0 ? `${tournament.entryFee} credits` : 'Free'}
+                    </span>
+                  </div>
+
+                  {tournament.status === 'UPCOMING' && (
+                    <button
+                      onClick={(e) => registerForTournament(tournament.id, e)}
+                      className="w-full cyber-gradient py-2 rounded pixel-corners text-white font-medium hover:opacity-90 transition-opacity"
+                    >
+                      Register Now
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
-        {loading ? (
+        {loading && tournaments.length > 0 ? (
           <div className="flex justify-center items-center mt-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
           </div>
-        ) : tournaments.length < totalTournaments ? (
+        ) : tournaments.length > 0 && tournaments.length < totalTournaments ? (
           <div className="flex justify-center mt-8">
             <button
               onClick={handleLoadMore}
