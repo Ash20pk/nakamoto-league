@@ -5,39 +5,21 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Trophy, Users, MapPin, ExternalLink, Zap, Shield, Search, Filter, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
-import type { Database } from '@/lib/database.types';
-
-interface Dojo {
-  id: string;
-  name: string;
-  location: string;
-  rank?: number;
-  powerLevel: number;
-  totalWarriors: number;
-  winRate: number;
-  specialization: string;
-  banner: string;
-}
-
-interface DojoFilters {
-  search?: string;
-  sortBy: 'rank' | 'powerLevel' | 'totalWarriors' | 'winRate';
-  sortOrder: 'asc' | 'desc';
-  page: number;
-  limit: number;
-}
+import { useDojo, type DojoFilters } from '@/hooks/useDojo';
 
 const DojosPage = () => {
   const router = useRouter();
   const { authState } = useAuth();
-  const supabase = createClientComponentClient<Database>();
+  const { 
+    dojos, 
+    dojoCount, 
+    loadingDojos, 
+    error, 
+    fetchDojos 
+  } = useDojo();
   
-  const [dojos, setDojos] = useState<Dojo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<DojoFilters>({
     sortBy: 'rank',
@@ -46,87 +28,18 @@ const DojosPage = () => {
     page: 1,
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [totalDojos, setTotalDojos] = useState(0);
 
   useEffect(() => {
-    const fetchDojos = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        let query = supabase
-          .from('dojos')
-          .select('*', { count: 'exact' });
-
-        // Apply search filter
-        if (searchTerm) {
-          query = query.ilike('name', `%${searchTerm}%`);
-        }
-
-        // Apply sorting
-        query = query.order('created_at', { ascending: false });
-
-        // Apply pagination
-        const start = (filters.page - 1) * filters.limit;
-        const end = start + filters.limit - 1;
-        query = query.range(start, end);
-
-        const { data, error: fetchError, count } = await query;
-
-        if (fetchError) throw fetchError;
-
-        // Get warrior counts for each dojo
-        const dojoIds = data?.map(dojo => dojo.id) || [];
-        // Get warrior counts for each dojo
-        const countMap = new Map();
-        if (data && data.length > 0) {
-          const dojoIds = data.map(dojo => dojo.id);
-          
-          // Query warriors for these dojos
-          const { data: warriors, error: warriorsError } = await supabase
-            .from('warriors')
-            .select('dojo_id')
-            .in('dojo_id', dojoIds);
-          
-          if (warriorsError) throw warriorsError;
-          
-          // Count warriors for each dojo manually
-          warriors?.forEach(warrior => {
-            if (warrior.dojo_id) {
-              const currentCount = countMap.get(warrior.dojo_id) || 0;
-              countMap.set(warrior.dojo_id, currentCount + 1);
-            }
-          });
-}
-
-        // Transform data to match our Dojo interface
-        const transformedData: Dojo[] = data?.map((dojo, index) => ({
-          id: dojo.id,
-          name: dojo.name,
-          location: dojo.location || 'Unknown Location',
-          rank: index + 1,
-          powerLevel: Math.floor(Math.random() * 1000) + 1500, // Placeholder
-          totalWarriors: countMap.get(dojo.id) || 0,
-          winRate: Math.floor(Math.random() * 50) + 50, // Placeholder
-          specialization: dojo.description?.split(' ')[0] || 'Mixed',
-          banner: dojo.banner_url || '/images/default-dojo.jpg'
-        })) || [];
-
-        setDojos(transformedData);
-        setTotalDojos(count || 0);
-      } catch (err) {
-        console.error('Error fetching dojos:', err);
-        setError('Failed to fetch dojos');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDojos();
-  }, [supabase, searchTerm, filters]);
+    fetchDojos(filters);
+  }, [fetchDojos, filters]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
   };
 
   const handleFilterChange = (key: keyof DojoFilters, value: any) => {
@@ -159,7 +72,7 @@ const DojosPage = () => {
 
         {/* Search and Filters */}
         <div className="mb-8">
-          <form onSubmit={(e) => { e.preventDefault(); }} className="flex gap-4 mb-8">
+          <form onSubmit={handleSearchSubmit} className="flex gap-4 mb-8">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -217,118 +130,110 @@ const DojosPage = () => {
               </div>
             </div>
           )}
+        </div>
 
-          {error && (
-            <div className="bg-red-900/30 border border-red-500/20 rounded-lg p-4 text-red-400 mb-6">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="bg-red-900/30 border border-red-500/20 rounded-lg p-4 text-red-400 mb-6">
+            {error}
+          </div>
+        )}
 
-          {loading && dojos.length === 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-slate-800/50 rounded-lg overflow-hidden border border-purple-500/20 animate-pulse">
-                  <div className="h-48 bg-slate-700/50" />
-                  <div className="p-6 space-y-4">
-                    <div className="h-6 bg-slate-700/50 rounded w-3/4" />
-                    <div className="h-4 bg-slate-700/50 rounded w-1/2" />
-                    <div className="h-4 bg-slate-700/50 rounded w-2/3" />
-                  </div>
+        {/* Dojos Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {loadingDojos && dojos.length === 0 ? (
+            // Loading skeletons
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden animate-pulse">
+                <div className="h-48 bg-slate-700/50"></div>
+                <div className="p-4 space-y-3">
+                  <div className="h-6 bg-slate-700/50 rounded w-3/4"></div>
+                  <div className="h-4 bg-slate-700/50 rounded w-1/2"></div>
+                  <div className="h-4 bg-slate-700/50 rounded w-2/3"></div>
+                  <div className="h-10 bg-slate-700/50 rounded"></div>
                 </div>
-              ))}
+              </div>
+            ))
+          ) : dojos.length === 0 ? (
+            <div className="col-span-full text-center py-10">
+              <p className="text-slate-400 text-lg">No dojos found matching your criteria.</p>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {dojos.map((dojo) => (
-                  <Link
-                    key={dojo.id}
-                    href={`/dojos/${dojo.id}`}
-                    className="bg-slate-800/50 rounded-lg overflow-hidden hover:bg-slate-700/50 transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 group"
-                  >
-                    <div className="relative h-48">
-                      <div className="w-full h-full relative">
-                        <Image
-                          src={dojo.banner}
-                          alt={dojo.name}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent" />
-                      
-                      {dojo.rank && (
-                        <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 backdrop-blur-sm">
-                          #{dojo.rank}
-                        </div>
-                      )}
-                      
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
-                          {dojo.name}
-                        </h2>
-                        <div className="flex items-center gap-4 text-sm text-slate-300">
-                          <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4 text-blue-400" />
-                            <span>{dojo.totalWarriors.toLocaleString()} Warriors</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Trophy className="w-4 h-4 text-yellow-400" />
-                            <span>{dojo.winRate}% Win Rate</span>
-                          </div>
-                        </div>
-                      </div>
+            dojos.map(dojo => (
+              <div 
+                key={dojo.id}
+                className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden hover:border-purple-500/40 transition-all cursor-pointer"
+                onClick={() => router.push(`/dojos/${dojo.id}`)}
+              >
+                <div className="relative h-48">
+                  <div className="w-full h-full relative">
+                    <Image
+                      src={dojo.banner}
+                      alt={dojo.name}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/90 to-transparent p-4">
+                    <h3 className="text-white font-bold text-lg">{dojo.name}</h3>
+                    <div className="flex items-center gap-2 text-slate-300">
+                      <MapPin size={14} />
+                      <span className="text-sm">{dojo.location}</span>
                     </div>
-
-                    <div className="p-6">
-                      <div className="flex items-center gap-2 text-sm text-slate-400 mb-4">
-                        <MapPin className="w-4 h-4" />
-                        <span>{dojo.location}</span>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-emerald-400" />
-                          <span className="text-sm text-slate-400">Specialization: {dojo.specialization}</span>
-                        </div>
-                        
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Zap className="w-4 h-4 text-purple-400" />
-                            <span className="text-sm text-slate-400">Power Level</span>
-                          </div>
-                          <PowerLevelBar level={dojo.powerLevel} />
-                          <div className="flex items-center justify-between mt-2">
-                            <div className="text-2xl font-bold text-purple-400">
-                              {dojo.powerLevel.toLocaleString()}
-                            </div>
-                            <div className="flex items-center gap-1 text-purple-400 group-hover:translate-x-1 transition-transform">
-                              <span className="text-sm font-medium">View Details</span>
-                              <ExternalLink className="w-4 h-4" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-2">
+                      <Shield size={16} className="text-purple-400" />
+                      <span className="text-slate-300 text-sm">Rank #{dojo.rank}</span>
                     </div>
-                  </Link>
-                ))}
-              </div>
-
-              {dojos.length < totalDojos && (
-                <div className="mt-8 text-center">
+                    <div className="flex items-center gap-2">
+                      <Users size={16} className="text-slate-400" />
+                      <span className="text-slate-300 text-sm">{dojo.totalWarriors} warriors</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-slate-400">Power Level</span>
+                      <span className="text-sm font-semibold text-slate-300">{dojo.powerLevel}</span>
+                    </div>
+                    <PowerLevelBar level={dojo.powerLevel} />
+                  </div>
+                  
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-1">
+                      <Zap size={16} className="text-yellow-500" />
+                      <span className="text-slate-300 text-sm">Win Rate: {dojo.winRate}%</span>
+                    </div>
+                    <div className="px-2 py-1 bg-slate-800/70 rounded text-xs text-slate-300 border border-purple-500/20">
+                      {dojo.specialization}
+                    </div>
+                  </div>
+                  
                   <button
-                    onClick={handleLoadMore}
-                    disabled={loading}
-                    className="px-6 py-3 bg-slate-800/50 border border-purple-500/20 rounded-lg text-purple-400 hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+                    className="w-full py-2 bg-slate-800/70 border border-purple-500/20 rounded-lg hover:bg-slate-800/90 text-slate-300 transition-colors"
                   >
-                    {loading ? 'Loading...' : 'Load More'}
+                    View Dojo
                   </button>
                 </div>
-              )}
-            </>
+              </div>
+            ))
           )}
         </div>
+
+        {/* Load More Button */}
+        {dojos.length > 0 && dojos.length < dojoCount && (
+          <div className="text-center mt-8">
+            <button
+              onClick={handleLoadMore}
+              className="px-6 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg hover:bg-slate-800/70 text-slate-300"
+            >
+              Load More
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

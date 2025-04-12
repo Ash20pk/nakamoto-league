@@ -6,7 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { MapPin, Globe, Twitter, Github, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
-import { DojoService } from '@/services/dojoService';
+import { useDojoCRUD } from '@/hooks/useDojoCRUD';
 
 interface RegisterDojoForm {
   name: string;
@@ -24,6 +24,7 @@ interface RegisterDojoForm {
 export default function RegisterDojoPage() {
   const router = useRouter();
   const { authState } = useAuth();
+  const { uploadDojoBanner, createDojo, loading: serviceLoading, error: serviceError } = useDojoCRUD();
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +104,18 @@ export default function RegisterDojoPage() {
     }
   }, [authState.dojo, authState.loading, router]);
 
+  useEffect(() => {
+    // Update error state when service error changes
+    if (serviceError) {
+      setError(serviceError);
+    }
+  }, [serviceError]);
+
+  useEffect(() => {
+    // Update loading state when service loading changes
+    setLoading(serviceLoading);
+  }, [serviceLoading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authState.user) return;
@@ -111,22 +124,19 @@ export default function RegisterDojoPage() {
       setLoading(true);
       setError(null);
 
-      // Create DojoService instance
-      const dojoService = new DojoService();
-
       // Upload banner if selected
       let bannerUrl: string | undefined = undefined;
       if (bannerFile) {
-        bannerUrl = await dojoService.uploadDojoBanner(bannerFile, authState.user.id);
+        bannerUrl = await uploadDojoBanner(bannerFile, authState.user.id);
       }
 
       // Create dojo with only the fields that exist in the database schema
-      const dojo = await dojoService.createDojo({
+      const dojo = await createDojo({
         name: formData.name,
         description: formData.description,
         location: formData.location,
         banner_url: bannerUrl,
-        // These fields will be extracted in the service and not sent to the database
+        // These fields will be extracted in the hook and not sent to the database
         socialLinks: formData.socialLinks,
         tags: formData.tags,
       }, authState.user.id);

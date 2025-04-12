@@ -6,54 +6,21 @@ import Link from 'next/link';
 import { Search, Filter, ChevronDown, Trophy, Users, Calendar, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/providers/AuthProvider';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
-import type { Database } from '@/lib/database.types';
-
-interface Tournament {
-  id: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  status: 'UPCOMING' | 'ONGOING' | 'COMPLETED';
-  format: 'SINGLE_ELIMINATION' | 'DOUBLE_ELIMINATION' | 'ROUND_ROBIN' | 'SWISS';
-  prize: {
-    amount: number;
-    currency: string;
-    description: string;
-  };
-  registrationDeadline: string;
-  maxParticipants: number;
-  currentParticipants: number;
-  entryFee: number;
-  organizer: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
-  banner?: string;
-}
-
-interface TournamentFilters {
-  search?: string;
-  status?: Tournament['status'];
-  format?: Tournament['format'];
-  sortBy: 'startDate' | 'prizePool' | 'participants';
-  sortOrder: 'asc' | 'desc';
-  page: number;
-  limit: number;
-}
+import { useTournament, type TournamentFilters } from '@/hooks/useTournament';
 
 const TournamentsPage = () => {
   const router = useRouter();
   const { authState } = useAuth();
-  const supabase = createClientComponentClient<Database>();
+  const { 
+    tournaments, 
+    tournamentCount, 
+    loadingTournaments, 
+    error, 
+    fetchTournaments 
+  } = useTournament();
   
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<TournamentFilters>({
     sortBy: 'startDate',
@@ -62,122 +29,18 @@ const TournamentsPage = () => {
     page: 1,
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [totalTournaments, setTotalTournaments] = useState(0);
 
   useEffect(() => {
-    const fetchTournaments = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        let query = supabase
-          .from('tournaments')
-          .select('*, profiles(*)', { count: 'exact' });
-
-        // Apply search filter
-        if (searchTerm) {
-          query = query.ilike('title', `%${searchTerm}%`);
-        }
-
-        // Apply format filter
-        if (filters.format) {
-          query = query.eq('format', filters.format);
-        }
-
-        // Apply sorting
-        if (filters.sortBy === 'startDate') {
-          query = query.order('start_date', { ascending: filters.sortOrder === 'asc' });
-        } else if (filters.sortBy === 'prizePool') {
-          // Using JSONB path operator for sorting by prize amount
-          query = query.order('prize_pool->amount', { ascending: filters.sortOrder === 'asc' });
-        }
-        // participants count sorting would need to be done client-side or with joins
-
-        // Apply pagination
-        const start = (filters.page - 1) * filters.limit;
-        const end = start + filters.limit - 1;
-        query = query.range(start, end);
-
-        const { data, error: fetchError, count } = await query;
-
-        if (fetchError) throw fetchError;
-
-        // Get tournament IDs to fetch participant counts
-        const tournamentIds = data?.map(t => t.id) || [];
-        
-        // Create a map to hold participant counts
-        const countMap = new Map();
-        
-        // Fetch participant counts if there are tournaments
-        if (tournamentIds.length > 0) {
-          // Fetch all participants for these tournaments
-          const { data: participants, error: countError } = await supabase
-            .from('tournament_participants')
-            .select('tournament_id')
-            .in('tournament_id', tournamentIds);
-            
-          if (countError) throw countError;
-          
-          // Count participants per tournament
-          participants?.forEach(item => {
-            const currentCount = countMap.get(item.tournament_id) || 0;
-            countMap.set(item.tournament_id, currentCount + 1);
-          });
-        }
-
-        // Transform to our Tournament interface
-        const now = new Date();
-        const transformedData: Tournament[] = data?.map(tournament => {
-          const startDate = new Date(tournament.start_date);
-          const endDate = new Date(tournament.end_date);
-          
-          let status: Tournament['status'];
-          if (now < startDate) status = 'UPCOMING';
-          else if (now > endDate) status = 'COMPLETED';
-          else status = 'ONGOING';
-
-          // Apply status filter client-side if needed
-          if (filters.status && status !== filters.status) {
-            return null; // Skip this tournament
-          }
-
-          return {
-            id: tournament.id,
-            title: tournament.title,
-            description: tournament.description || '',
-            startDate: tournament.start_date,
-            endDate: tournament.end_date,
-            status,
-            format: tournament.format,
-            prize: tournament.prize_pool as Tournament['prize'],
-            registrationDeadline: tournament.registration_deadline,
-            maxParticipants: tournament.max_participants,
-            currentParticipants: countMap.get(tournament.id) || 0,
-            entryFee: tournament.entry_fee,
-            organizer: {
-              id: tournament.organizer_id,
-              name: tournament.profiles?.username || 'Unknown',
-              avatar: tournament.profiles?.avatar_url || '/images/default-avatar.jpg',
-            },
-            banner: tournament.banner_url || '/images/default-tournament.jpg',
-          };
-        }).filter(Boolean) as Tournament[];
-
-        setTournaments(transformedData);
-        setTotalTournaments(count || 0);
-      } catch (err) {
-        console.error('Error fetching tournaments:', err);
-        setError('Failed to fetch tournaments');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTournaments();
-  }, [supabase, searchTerm, filters]);
+    fetchTournaments(filters);
+  }, [fetchTournaments, filters]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
   };
 
   const handleFilterChange = (key: keyof TournamentFilters, value: any) => {
@@ -188,7 +51,7 @@ const TournamentsPage = () => {
     setFilters(prev => ({ ...prev, page: prev.page + 1 }));
   };
 
-  const getStatusColor = (status: Tournament['status']) => {
+  const getStatusColor = (status: 'UPCOMING' | 'ONGOING' | 'COMPLETED') => {
     switch (status) {
       case 'UPCOMING':
         return 'text-blue-400 bg-blue-900/30 border-blue-500/50';
@@ -199,47 +62,17 @@ const TournamentsPage = () => {
     }
   };
 
-  const registerForTournament = async (tournamentId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    if (!authState.warrior) {
-      router.push('/auth/login?redirect=/dashboard/warriors/register');
-      return;
-    }
-
-    try {
-      setError(null);
-      
-      const { error: registrationError } = await supabase
-        .from('tournament_participants')
-        .insert({
-          tournament_id: tournamentId,
-          warrior_id: authState.warrior.id,
-          registration_date: new Date().toISOString(),
-          status: 'REGISTERED'
-        });
-
-      if (registrationError) throw registrationError;
-
-      router.push(`/tournaments/${tournamentId}`);
-    } catch (err) {
-      console.error('Error registering for tournament:', err);
-      setError(err instanceof Error ? err.message : 'Failed to register for tournament');
-    }
-  };
-
   return (
     <>
       <Navbar />
       <div className="container mx-auto px-4 py-8 mt-16">
-        {/* Page Header with Create Button */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-white">Tournaments</h1>
         </div>
 
         {/* Search and Filters */}
         <div className="mb-8">
-          <div className="flex gap-4 mb-4">
+          <form onSubmit={handleSearchSubmit} className="flex gap-4 mb-4">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -257,6 +90,7 @@ const TournamentsPage = () => {
               Search
             </button>
             <button
+              type="button"
               onClick={() => setShowFilters(!showFilters)}
               className="px-4 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg flex items-center gap-2 hover:bg-slate-800/70 text-slate-300"
             >
@@ -264,10 +98,10 @@ const TournamentsPage = () => {
               Filters
               <ChevronDown size={16} className={showFilters ? 'rotate-180' : ''} />
             </button>
-          </div>
+          </form>
 
           {showFilters && (
-            <div className="p-4 bg-slate-800/50 border border-purple-500/20 rounded-lg mb-4">
+            <div className="mb-6 p-4 bg-slate-800/50 border border-purple-500/20 rounded-lg">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 text-slate-300">Status</label>
@@ -276,7 +110,7 @@ const TournamentsPage = () => {
                     onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
                     className="w-full p-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-200"
                   >
-                    <option value="">All</option>
+                    <option value="">All Statuses</option>
                     <option value="UPCOMING">Upcoming</option>
                     <option value="ONGOING">Ongoing</option>
                     <option value="COMPLETED">Completed</option>
@@ -289,7 +123,7 @@ const TournamentsPage = () => {
                     onChange={(e) => handleFilterChange('format', e.target.value || undefined)}
                     className="w-full p-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-200"
                   >
-                    <option value="">All</option>
+                    <option value="">All Formats</option>
                     <option value="SINGLE_ELIMINATION">Single Elimination</option>
                     <option value="DOUBLE_ELIMINATION">Double Elimination</option>
                     <option value="ROUND_ROBIN">Round Robin</option>
@@ -308,6 +142,17 @@ const TournamentsPage = () => {
                     <option value="participants">Participants</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-300">Sort Order</label>
+                  <select
+                    value={filters.sortOrder}
+                    onChange={(e) => handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')}
+                    className="w-full p-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-200"
+                  >
+                    <option value="desc">Highest First</option>
+                    <option value="asc">Lowest First</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -319,11 +164,12 @@ const TournamentsPage = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading && tournaments.length === 0 ? (
+        {/* Tournament Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {loadingTournaments && tournaments.length === 0 ? (
             // Loading skeletons
             [...Array(6)].map((_, i) => (
-              <div key={i} className="bg-slate-800/50 rounded-lg shadow-lg overflow-hidden border border-purple-500/20 animate-pulse">
+              <div key={i} className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden animate-pulse">
                 <div className="h-48 bg-slate-700/50"></div>
                 <div className="p-4 space-y-3">
                   <div className="h-6 bg-slate-700/50 rounded w-3/4"></div>
@@ -334,14 +180,14 @@ const TournamentsPage = () => {
               </div>
             ))
           ) : tournaments.length === 0 ? (
-            <div className="col-span-3 text-center py-10">
+            <div className="col-span-full text-center py-10">
               <p className="text-slate-400 text-lg">No tournaments found matching your criteria.</p>
             </div>
           ) : (
             tournaments.map(tournament => (
-              <div
+              <div 
                 key={tournament.id}
-                className="bg-slate-800/50 rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform border border-purple-500/20 hover:border-purple-500/40"
+                className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden hover:border-purple-500/40 transition-all cursor-pointer"
                 onClick={() => router.push(`/tournaments/${tournament.id}`)}
               >
                 <div className="relative h-48">
@@ -355,79 +201,67 @@ const TournamentsPage = () => {
                     />
                   </div>
                   <div className="absolute top-4 right-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(tournament.status)}`}>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${getStatusColor(tournament.status)}`}>
                       {tournament.status}
                     </span>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/90 to-transparent p-4">
                     <h3 className="text-white font-bold text-lg">{tournament.title}</h3>
-                    <p className="text-gray-200 text-sm">
+                    <p className="text-gray-300 text-sm">
                       {tournament.format.replace('_', ' ')}
                     </p>
                   </div>
                 </div>
-                
                 <div className="p-4">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Calendar size={16} className="text-slate-400" />
-                      <span className="text-sm text-slate-300">
-                        {format(new Date(tournament.startDate), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users size={16} className="text-slate-400" />
-                      <span className="text-sm text-slate-300">
-                        {tournament.currentParticipants}/{tournament.maxParticipants}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 mb-4">
-                    <Trophy size={20} className="text-yellow-500" />
-                    <div>
-                      <p className="font-bold text-lg text-slate-200">
-                        {tournament.prize.amount.toLocaleString()} {tournament.prize.currency}
-                      </p>
-                      <p className="text-sm text-slate-400">{tournament.prize.description}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 mb-4">
-                    <Coins size={16} className="text-slate-400" />
-                    <span className="text-sm text-slate-300">
-                      Entry Fee: {tournament.entryFee > 0 ? `${tournament.entryFee} credits` : 'Free'}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar size={16} className="text-slate-400" />
+                    <span className="text-slate-300 text-sm">
+                      {new Date(tournament.startDate).toLocaleDateString()} - {new Date(tournament.endDate).toLocaleDateString()}
                     </span>
                   </div>
-
-                  {tournament.status === 'UPCOMING' && (
-                    <button
-                      onClick={(e) => registerForTournament(tournament.id, e)}
-                      className="w-full cyber-gradient py-2 rounded pixel-corners text-white font-medium hover:opacity-90 transition-opacity"
-                    >
-                      Register Now
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users size={16} className="text-slate-400" />
+                    <span className="text-slate-300 text-sm">
+                      {tournament.currentParticipants} / {tournament.maxParticipants} participants
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Coins size={16} className="text-slate-400" />
+                    <span className="text-slate-300 text-sm">
+                      {tournament.prize.amount} {tournament.prize.currency} prize pool
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-shrink-0 w-8 h-8 relative rounded-full overflow-hidden">
+                      <Image
+                        src={tournament.organizer.avatar}
+                        alt={tournament.organizer.name}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <span className="text-slate-300 text-sm">
+                      Organized by {tournament.organizer.name}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {loading && tournaments.length > 0 ? (
-          <div className="flex justify-center items-center mt-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-          </div>
-        ) : tournaments.length > 0 && tournaments.length < totalTournaments ? (
-          <div className="flex justify-center mt-8">
+        {/* Load More Button */}
+        {tournaments.length > 0 && tournaments.length < tournamentCount && (
+          <div className="text-center mt-8">
             <button
               onClick={handleLoadMore}
-              className="px-6 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-purple-400 hover:bg-slate-800/70 transition-colors"
+              className="px-6 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg hover:bg-slate-800/70 text-slate-300"
             >
               Load More
             </button>
           </div>
-        ) : null}
+        )}
       </div>
     </>
   );

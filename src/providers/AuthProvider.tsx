@@ -17,6 +17,7 @@ interface AuthState {
   dojo: Dojo | null;
   accountType: 'warrior' | 'dojo' | null;
   loading: boolean;
+  isAuthenticated: boolean;
 }
 
 interface AuthContextType {
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dojo: null,
     accountType: null,
     loading: true,
+    isAuthenticated: false,
   });
 
   // Fetch user data from Supabase
@@ -51,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         dojo: null,
         accountType: null,
         loading: false,
+        isAuthenticated: false,
       });
       return;
     }
@@ -103,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         dojo,
         accountType,
         loading: false,
+        isAuthenticated: true,
       });
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -113,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         dojo: null,
         accountType: null,
         loading: false,
+        isAuthenticated: false,
       });
     }
   };
@@ -215,6 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         dojo: null,
         accountType: null,
         loading: false,
+        isAuthenticated: false,
       });
       router.push('/');
     } catch (error) {
