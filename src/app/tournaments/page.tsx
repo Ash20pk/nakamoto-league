@@ -9,17 +9,13 @@ import { useAuth } from '@/providers/AuthProvider';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { useTournament, type TournamentFilters } from '@/hooks/useTournament';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const TournamentsPage = () => {
   const router = useRouter();
   const { authState } = useAuth();
-  const { 
-    tournaments, 
-    tournamentCount, 
-    loadingTournaments, 
-    error, 
-    fetchTournaments 
-  } = useTournament();
+  const { tournaments, tournamentCount, loadingTournaments, error, fetchTournaments } = useTournament();
+  const { canCreateTournament, canJoinTournament } = usePermissions();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<TournamentFilters>({
@@ -68,6 +64,11 @@ const TournamentsPage = () => {
       <div className="container mx-auto px-4 py-8 mt-16">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-white">Tournaments</h1>
+          {canCreateTournament && (
+            <Link href="/tournaments/create" className="neon-button-red px-4 py-2 rounded-lg">
+              Create Tournament
+            </Link>
+          )}
         </div>
 
         {/* Search and Filters */}
@@ -187,10 +188,9 @@ const TournamentsPage = () => {
             tournaments.map(tournament => (
               <div 
                 key={tournament.id}
-                className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden hover:border-purple-500/40 transition-all cursor-pointer"
-                onClick={() => router.push(`/tournaments/${tournament.id}`)}
+                className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden hover:border-purple-500/40 transition-all"
               >
-                <div className="relative h-48">
+                <div className="relative h-48 cursor-pointer" onClick={() => router.push(`/tournaments/${tournament.id}`)}>
                   <div className="w-full h-full relative">
                     <Image
                       src={tournament.banner || '/images/default-tournament.jpg'}
@@ -231,7 +231,7 @@ const TournamentsPage = () => {
                       {tournament.prize.amount} {tournament.prize.currency} prize pool
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-4">
                     <div className="flex-shrink-0 w-8 h-8 relative rounded-full overflow-hidden">
                       <Image
                         src={tournament.organizer.avatar}
@@ -245,6 +245,15 @@ const TournamentsPage = () => {
                       Organized by {tournament.organizer.name}
                     </span>
                   </div>
+                  
+                  {tournament.status === 'UPCOMING' && canJoinTournament && (
+                    <button
+                      onClick={() => router.push(`/tournaments/${tournament.id}/register`)}
+                      className="w-full py-2 neon-button-red rounded-lg text-white"
+                    >
+                      Join Tournament
+                    </button>
+                  )}
                 </div>
               </div>
             ))

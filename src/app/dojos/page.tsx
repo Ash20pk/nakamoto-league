@@ -8,17 +8,13 @@ import { useAuth } from '@/providers/AuthProvider';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { useDojo, type DojoFilters } from '@/hooks/useDojo';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const DojosPage = () => {
   const router = useRouter();
   const { authState } = useAuth();
-  const { 
-    dojos, 
-    dojoCount, 
-    loadingDojos, 
-    error, 
-    fetchDojos 
-  } = useDojo();
+  const { dojos, dojoCount, loadingDojos, error, fetchDojos } = useDojo();
+  const { canCreateDojo, canJoinDojo } = usePermissions();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<DojoFilters>({
@@ -68,6 +64,11 @@ const DojosPage = () => {
       <div className="container mx-auto px-4 py-8 mt-16">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-white">Dojos</h1>
+          {canCreateDojo && (
+            <Link href="/dojos/create" className="neon-button-red px-4 py-2 rounded-lg">
+              Create Dojo
+            </Link>
+          )}
         </div>
 
         {/* Search and Filters */}
@@ -161,10 +162,9 @@ const DojosPage = () => {
             dojos.map(dojo => (
               <div 
                 key={dojo.id}
-                className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden hover:border-purple-500/40 transition-all cursor-pointer"
-                onClick={() => router.push(`/dojos/${dojo.id}`)}
+                className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden hover:border-purple-500/40 transition-all"
               >
-                <div className="relative h-48">
+                <div className="relative h-48 cursor-pointer" onClick={() => router.push(`/dojos/${dojo.id}`)}>
                   <div className="w-full h-full relative">
                     <Image
                       src={dojo.banner}
@@ -212,11 +212,21 @@ const DojosPage = () => {
                     </div>
                   </div>
                   
-                  <button
-                    className="w-full py-2 bg-slate-800/70 border border-purple-500/20 rounded-lg hover:bg-slate-800/90 text-slate-300 transition-colors"
-                  >
-                    View Dojo
-                  </button>
+                  {canJoinDojo ? (
+                    <button
+                      onClick={() => router.push(`/dojos/${dojo.id}/join`)}
+                      className="w-full py-2 neon-button-red rounded-lg text-white"
+                    >
+                      Join Dojo
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => router.push(`/dojos/${dojo.id}`)}
+                      className="w-full py-2 bg-slate-800/70 border border-purple-500/20 rounded-lg hover:bg-slate-800/90 text-slate-300 transition-colors"
+                    >
+                      View Dojo
+                    </button>
+                  )}
                 </div>
               </div>
             ))

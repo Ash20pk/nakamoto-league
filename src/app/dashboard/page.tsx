@@ -9,6 +9,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/database.types';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface Tournament {
   id: string;
@@ -51,6 +52,7 @@ interface Dojo {
 
 export default function Dashboard() {
   const { authState } = useAuth();
+  const { isWarrior, isDojo, canCreateTournament, canCreateDojo, canCreateBattle, canJoinTournament, canJoinDojo, canJoinBattle } = usePermissions();
   const supabase = createClientComponentClient<Database>();
   
   const [activeTournaments, setActiveTournaments] = useState<Tournament[]>([]);
@@ -580,6 +582,92 @@ export default function Dashboard() {
                   </Link>
                 </div>
               )}
+            </div>
+          </div>
+          
+          {/* Quick Actions */}
+          <div className="bg-gray-900/40 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden">
+            <div className="border-b border-gray-800 p-4">
+              <h2 className="text-lg font-bold text-white">
+                <Zap className="inline-block mr-2 text-yellow-500" size={20} />
+                Quick Actions
+              </h2>
+            </div>
+            
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {isWarrior && (
+                <>
+                  {canJoinTournament && (
+                    <Link href="/tournaments" className="action-card">
+                      <Trophy size={24} className="text-yellow-500" />
+                      <div>
+                        <h3 className="text-white font-semibold">Join Tournament</h3>
+                        <p className="text-gray-400 text-sm">Find and register for tournaments</p>
+                      </div>
+                    </Link>
+                  )}
+                  
+                  {canJoinDojo && (
+                    <Link href="/dojos" className="action-card">
+                      <Shield size={24} className="text-purple-500" />
+                      <div>
+                        <h3 className="text-white font-semibold">Join Dojo</h3>
+                        <p className="text-gray-400 text-sm">Find a dojo to train with</p>
+                      </div>
+                    </Link>
+                  )}
+                  
+                  {canJoinBattle && (
+                    <Link href="/battles" className="action-card">
+                      <Sword size={24} className="text-red-500" />
+                      <div>
+                        <h3 className="text-white font-semibold">Join Battle</h3>
+                        <p className="text-gray-400 text-sm">Find battles to participate in</p>
+                      </div>
+                    </Link>
+                  )}
+                </>
+              )}
+              
+              {isDojo && (
+                <>
+                  {canCreateTournament && (
+                    <Link href="/tournaments/create" className="action-card">
+                      <Trophy size={24} className="text-yellow-500" />
+                      <div>
+                        <h3 className="text-white font-semibold">Create Tournament</h3>
+                        <p className="text-gray-400 text-sm">Organize a new tournament</p>
+                      </div>
+                    </Link>
+                  )}
+                  
+                  {canCreateBattle && (
+                    <Link href="/battles/create" className="action-card">
+                      <Sword size={24} className="text-red-500" />
+                      <div>
+                        <h3 className="text-white font-semibold">Create Battle</h3>
+                        <p className="text-gray-400 text-sm">Challenge another dojo to battle</p>
+                      </div>
+                    </Link>
+                  )}
+                  
+                  <Link href="/dashboard/warriors" className="action-card">
+                    <Users size={24} className="text-blue-500" />
+                    <div>
+                      <h3 className="text-white font-semibold">Manage Warriors</h3>
+                      <p className="text-gray-400 text-sm">View and manage your dojo's warriors</p>
+                    </div>
+                  </Link>
+                </>
+              )}
+              
+              <Link href="/profile" className="action-card">
+                <Eye size={24} className="text-cyan" />
+                <div>
+                  <h3 className="text-white font-semibold">View Profile</h3>
+                  <p className="text-gray-400 text-sm">See your public profile</p>
+                </div>
+              </Link>
             </div>
           </div>
           

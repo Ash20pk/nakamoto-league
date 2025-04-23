@@ -77,7 +77,7 @@ function LoginContent() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen w-full flex items-center justify-center pt-16 px-4 relative overflow-hidden bg-black">
+      <div className="min-h-screen w-full flex items-center justify-center px-4 relative overflow-hidden bg-black">
         {/* Background Elements */}
         <div className="absolute inset-0 bg-[url('/images/cyber-grid.png')] opacity-5 z-0"></div>
         <div className="absolute inset-0 bg-scan-lines opacity-10 z-0"></div>

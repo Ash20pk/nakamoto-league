@@ -1,16 +1,73 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
-  ArrowRight, Calendar, Users, MapPin, Trophy, 
-  Sword, Shield, Zap, Code, GitBranch, 
-  ChevronRight, Clock, BarChart, Filter, Search,
-  Bell, User, ExternalLink, Award, Bookmark 
+  ChevronRight, 
+  Trophy, 
+  Users, 
+  Calendar, 
+  Zap,
+  Bell,
+  Award,
+  Building,
+  Search,
+  Clock,
+  MapPin,
+  Shield,
+  ArrowRight,
+  BarChart,
+  User
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useTournament, type Tournament } from '@/hooks/useTournament';
+import { useDojo, type Dojo } from '@/hooks/useDojo';
+import { useWarrior } from '@/hooks/useWarrior';
+
+// Define interfaces for the UI components that match the expected format
+interface UITournament {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  participants: number;
+  image: string;
+  prize: string;
+  registrationEnds: string;
+  status: string;
+  tags: string[];
+  dojoHost: string;
+  progress?: number;
+  daysLeft?: number;
+}
+
+interface UIDojo {
+  id: string;
+  name: string;
+  members: number;
+  victories: number;
+  image: string;
+  activeTournaments: number;
+}
+
+interface UIWarrior {
+  id: string;
+  name: string;
+  rank: number;
+  dojo: string;
+  victories: number;
+  avatar: string;
+  specialty: string;
+}
+
+interface Activity {
+  id: number;
+  time: string;
+  content: React.ReactNode;
+  type: string;
+}
 
 export default function Home() {
   const [loaded, setLoaded] = useState(false);
@@ -20,196 +77,197 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sample data
-  const upcomingTournaments = [
-    {
-      id: 1,
-      title: 'Blockchain Battle Royale',
-      date: 'March 15-20, 2025',
-      location: 'Virtual Dojo',
-      participants: 128,
-      image: '/images/tournament-1.jpg',
-      prize: '$10,000',
-      registrationEnds: '2025-03-10',
-      status: 'Registration Open',
-      tags: ['Blockchain', 'Web3', 'DeFi'],
-      dojoHost: 'Tokyo Blockchain Dojo'
-    },
-    {
-      id: 2,
-      title: 'Smart Contract Showdown',
-      date: 'April 5-10, 2025',
-      location: 'Kyoto Tech Hub',
-      participants: 96,
-      image: '/images/tournament-2.jpg',
-      prize: '$8,500',
-      registrationEnds: '2025-03-30',
-      status: 'Registration Open',
-      tags: ['Smart Contracts', 'Ethereum', 'Solidity'],
-      dojoHost: 'Kyoto Code Masters'
-    },
-    {
-      id: 3,
-      title: 'Web3 Warriors Challenge',
-      date: 'April 25-30, 2025',
-      location: 'Tokyo Digital Arena',
-      participants: 144,
-      image: '/images/tournament-3.jpg',
-      prize: '$12,000',
-      registrationEnds: '2025-04-15',
-      status: 'Registration Open',
-      tags: ['Web3', 'NFTs', 'Gaming'],
-      dojoHost: 'Osaka Dev Warriors'
-    }
-  ];
+  // Use hooks to fetch data
+  const { tournaments: apiTournaments, loadingTournaments, fetchTournaments } = useTournament();
+  const { dojos: apiDojos, loadingDojos, fetchDojos } = useDojo();
+  const { warriors: apiWarriors, loadingWarriors, fetchWarriors } = useWarrior();
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const ongoingTournaments = [
-    {
-      id: 4,
-      title: 'Zero Knowledge Hackathon',
-      date: 'Feb 25-Mar 3, 2025',
-      location: 'Virtual',
-      participants: 210,
-      image: '/images/tournament-4.jpg',
-      prize: '$15,000',
-      progress: 65,
-      daysLeft: 3,
-      tags: ['ZK Proofs', 'Privacy', 'Cryptography'],
-      dojoHost: 'Sapporo Crypto Academy'
-    },
-    {
-      id: 5,
-      title: 'DeFi Development Summit',
-      date: 'Feb 20-Mar 5, 2025',
-      location: 'Hybrid - Tokyo & Virtual',
-      participants: 175,
-      image: '/images/tournament-5.jpg',
-      prize: '$11,000',
-      progress: 80,
-      daysLeft: 5,
-      tags: ['DeFi', 'Finance', 'Yield'],
-      dojoHost: 'Tokyo Blockchain Dojo'
-    }
-  ];
+  // Transform API data to UI format
+  const transformTournament = (tournament: Tournament): UITournament => {
+    return {
+      id: tournament.id,
+      title: tournament.title,
+      date: `${new Date(tournament.startDate).toLocaleDateString()} - ${new Date(tournament.endDate).toLocaleDateString()}`,
+      location: tournament.organizer?.name || 'Virtual',
+      participants: tournament.currentParticipants,
+      image: tournament.banner || '/images/default-tournament.jpg',
+      prize: typeof tournament.prize === 'object' && tournament.prize ? 
+        `$${tournament.prize.amount} ${tournament.prize.currency}` : 
+        '$10,000', // Default prize if not available
+      registrationEnds: tournament.registrationDeadline,
+      status: tournament.status === 'UPCOMING' ? 'Registration Open' : tournament.status,
+      tags: ['Blockchain', 'Web3', 'DeFi'], // Default tags if not available
+      dojoHost: tournament.organizer?.name || 'Unknown Host',
+      // For ongoing tournaments
+      progress: Math.floor(Math.random() * 100),
+      daysLeft: Math.floor(Math.random() * 10)
+    };
+  };
 
-  const topDojos = [
-    {
-      id: 1,
-      name: 'Tokyo Blockchain Dojo',
-      members: 240,
-      victories: 12,
-      image: '/images/dojo-1.jpg',
-      activeTournaments: 2
-    },
-    {
-      id: 2,
-      name: 'Kyoto Code Masters',
-      members: 185,
-      victories: 9,
-      image: '/images/dojo-2.jpg',
-      activeTournaments: 1
-    },
-    {
-      id: 3,
-      name: 'Osaka Dev Warriors',
-      members: 210,
-      victories: 8,
-      image: '/images/dojo-3.jpg',
-      activeTournaments: 1
-    },
-    {
-      id: 4,
-      name: 'Sapporo Crypto Academy',
-      members: 160,
-      victories: 7,
-      image: '/images/dojo-4.jpg',
-      activeTournaments: 1
-    }
-  ];
+  const transformDojo = (dojo: Dojo): UIDojo => {
+    // Generate deterministic values based on the dojo ID
+    const idSum = dojo.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    
+    return {
+      id: dojo.id,
+      name: dojo.name,
+      members: dojo.totalWarriors,
+      victories: 5 + (idSum % 10), // Deterministic victories based on ID
+      image: dojo.banner || '/images/default-dojo.jpg',
+      activeTournaments: 1 + (idSum % 3) // Deterministic active tournaments
+    };
+  };
 
-  const recentActivities = [
-    {
-      id: 1,
-      time: "3 hours ago",
-      content: <>
-        <span className="font-medium text-cyan-400">Tokyo Blockchain Dojo</span> won the 
-        <span className="font-medium text-red-400"> Smart Contract Showdown</span> tournament!
-      </>,
-      type: "trophy"
-    },
-    {
-      id: 2,
-      time: "Yesterday",
-      content: <>
-        <span className="font-medium text-red-400">Blockchain Battle Royale</span> registrations are now open. 
-        128 spots available!
-      </>,
-      type: "notification"
-    },
-    {
-      id: 3,
-      time: "2 days ago",
-      content: <>
-        <span className="font-medium text-cyan-400">Satoshi Nakamoto</span> achieved the 
-        highest rank in <span className="font-medium text-red-400">Web3 Warriors Leaderboard</span>!
-      </>,
-      type: "achievement"
-    },
-    {
-      id: 4,
-      time: "1 week ago",
-      content: <>
-        New dojo <span className="font-medium text-cyan-400">Fukuoka Blockchain Society</span> has 
-        joined the league.
-      </>,
-      type: "dojo"
-    }
-  ];
+  const transformWarrior = (warrior: any): UIWarrior => {
+    // Generate deterministic values based on the warrior ID
+    const idSum = warrior.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    
+    return {
+      id: warrior.id,
+      name: warrior.name,
+      rank: warrior.rank || 999,
+      dojo: warrior.dojos?.name || 'Independent',
+      victories: 3 + (idSum % 8), // Deterministic victories based on ID
+      avatar: warrior.avatar_url || '/images/default-avatar.jpg',
+      specialty: warrior.specialty || 'Mixed'
+    };
+  };
 
-  const topWarriors = [
-    {
-      id: 1,
-      name: "Satoshi Nakamoto",
-      rank: 1,
-      dojo: "Tokyo Blockchain Dojo",
-      victories: 8,
-      avatar: "/images/warrior-1.jpg",
-      specialty: "Smart Contracts"
-    },
-    {
-      id: 2,
-      name: "Vitalik Chen",
-      rank: 2,
-      dojo: "Kyoto Code Masters",
-      victories: 7,
-      avatar: "/images/warrior-2.jpg",
-      specialty: "DeFi Architecture"
-    },
-    {
-      id: 3,
-      name: "Ada Yamaguchi",
-      rank: 3,
-      dojo: "Osaka Dev Warriors",
-      victories: 6,
-      avatar: "/images/warrior-3.jpg",
-      specialty: "Zero Knowledge"
-    },
-    {
-      id: 4,
-      name: "Taro Tanaka",
-      rank: 4,
-      dojo: "Sapporo Crypto Academy",
-      victories: 5,
-      avatar: "/images/warrior-4.jpg",
-      specialty: "Blockchain Security"
+  // Transform API data to UI format
+  const upcomingTournaments: UITournament[] = apiTournaments
+    .filter(tournament => tournament.status === 'UPCOMING')
+    .map(transformTournament);
+
+  const ongoingTournaments: UITournament[] = apiTournaments
+    .filter(tournament => tournament.status === 'ONGOING')
+    .map(transformTournament);
+
+  // Use memoization to prevent recalculation on every render
+  const topDojos: UIDojo[] = useMemo(() => {
+    return apiDojos
+      .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+      .slice(0, 4)
+      .map(transformDojo);
+  }, [apiDojos]);
+
+  const topWarriors: UIWarrior[] = useMemo(() => {
+    return apiWarriors
+      .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+      .slice(0, 4)
+      .map(transformWarrior);
+  }, [apiWarriors]);
+
+  // Fetch tournaments, dojos, warriors and activities on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch tournaments with appropriate filters
+        await fetchTournaments({
+          sortBy: 'startDate',
+          sortOrder: 'desc',
+          limit: 10,
+          page: 1
+        });
+
+        // Fetch top dojos
+        await fetchDojos({
+          sortBy: 'rank',
+          sortOrder: 'asc',
+          limit: 4,
+          page: 1
+        });
+
+        // Fetch top warriors
+        await fetchWarriors({
+          sortBy: 'rank',
+          sortOrder: 'asc',
+          limit: 4,
+          page: 1
+        });
+
+        // Fetch recent activities
+        fetchRecentActivities();
+      } catch (err) {
+        console.error("Error fetching data for homepage:", err);
+        setError("Failed to load homepage data");
+      }
+    };
+
+    fetchData();
+  }, [fetchTournaments, fetchDojos, fetchWarriors]);
+
+  // Function to fetch recent activities
+  const fetchRecentActivities = async () => {
+    setLoadingActivities(true);
+    try {
+      // Since the activities API doesn't exist yet, we'll use sample data
+      // When the API is created, uncomment this code:
+      /*
+      const response = await fetch('/api/activities');
+      if (!response.ok) {
+        throw new Error('Failed to fetch activities');
+      }
+      const data = await response.json();
+      setRecentActivities(data.activities);
+      */
+      
+      // Use sample data for now
+      setRecentActivities([
+        {
+          id: 1,
+          time: "3 hours ago",
+          content: <>
+            <span className="font-medium text-cyan-400">Tokyo Blockchain Dojo</span> won the 
+            <span className="font-medium text-red-400"> Smart Contract Showdown</span> tournament!
+          </>,
+          type: "trophy"
+        },
+        {
+          id: 2,
+          time: "Yesterday",
+          content: <>
+            <span className="font-medium text-red-400">Blockchain Battle Royale</span> registrations are now open. 
+            128 spots available!
+          </>,
+          type: "notification"
+        },
+        {
+          id: 3,
+          time: "2 days ago",
+          content: <>
+            <span className="font-medium text-cyan-400">Satoshi Nakamoto</span> achieved the 
+            highest rank in <span className="font-medium text-red-400">Web3 Warriors Leaderboard</span>!
+          </>,
+          type: "achievement"
+        },
+        {
+          id: 4,
+          time: "1 week ago",
+          content: <>
+            New dojo <span className="font-medium text-cyan-400">Fukuoka Blockchain Society</span> has 
+            joined the league.
+          </>,
+          type: "dojo"
+        }
+      ]);
+    } catch (err) {
+      console.error("Error fetching activities:", err);
+      setError("Failed to load activities");
+    } finally {
+      setLoadingActivities(false);
     }
-  ];
+  };
 
   useEffect(() => {
     const glitchInterval = setInterval(() => {
       setGlitchEffect(true);
-      setTimeout(() => setGlitchEffect(false), 150);
-    }, 8000);
+      setTimeout(() => {
+        setGlitchEffect(false);
+      }, 200);
+    }, 5000);
 
     return () => clearInterval(glitchInterval);
   }, []);
@@ -217,22 +275,15 @@ export default function Home() {
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
-
-      const sections = document.querySelectorAll('section[id]');
-      sections.forEach(section => {
-        const sectionTop = section.offsetTop - 100;
-        if (scrollY >= sectionTop) {
-          setActiveSection(section.getAttribute('id'));
-        }
-      });
     };
 
     window.addEventListener('scroll', handleScroll);
+    setLoaded(true);
 
-    setTimeout(() => setLoaded(true), 300);
-
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [scrollY]);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const filteredTournaments = activeTab === 'upcoming' 
     ? upcomingTournaments.filter(t => 
@@ -282,7 +333,7 @@ export default function Home() {
                     <span>500+ Active Warriors</span>
                   </div>
                   <div className="cyber-badge-purple">
-                    <Shield className="w-4 h-4 mr-1" />
+                    <Building className="w-4 h-4 mr-1" />
                     <span>{topDojos.length} Dojos</span>
                   </div>
                 </div>
@@ -291,27 +342,27 @@ export default function Home() {
               <div className={`lg:w-1/2 lg:pl-8 transform transition-all duration-700 ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`} style={{ transitionDelay: '0.2s' }}>
                 <div className="bg-gray-900/60 backdrop-blur-sm rounded-lg p-4 border border-gray-800">
                   <h3 className="text-lg font-medium mb-3 text-white">Your Warrior Status</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                    <div className="bg-gray-800/50 backdrop-blur-sm p-3 rounded-md">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-2 text-sm text-gray-400">
+                    <div className="flex items-center">
                       <p className="text-gray-400 text-xs mb-1">Rank</p>
                       <p className="text-2xl font-bold text-cyan-400">#42</p>
                     </div>
-                    <div className="bg-gray-800/50 backdrop-blur-sm p-3 rounded-md">
+                    <div className="flex items-center">
                       <p className="text-gray-400 text-xs mb-1">Victories</p>
                       <p className="text-2xl font-bold text-red-400">3</p>
                     </div>
-                    <div className="bg-gray-800/50 backdrop-blur-sm p-3 rounded-md">
+                    <div className="flex items-center">
                       <p className="text-gray-400 text-xs mb-1">Active Battles</p>
                       <p className="text-2xl font-bold text-purple-400">1</p>
                     </div>
-                    <div className="bg-gray-800/50 backdrop-blur-sm p-3 rounded-md">
+                    <div className="flex items-center">
                       <p className="text-gray-400 text-xs mb-1">Dojo</p>
                       <p className="text-sm font-bold text-white truncate">Tokyo Blockchain</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Link href="/profile" className="neon-button-red-sm px-3 py-1.5 text-white text-sm font-medium flex items-center">
-                      <User className="w-3.5 h-3.5 mr-1" />
+                      <Award className="w-3.5 h-3.5 mr-1" />
                       Profile
                     </Link>
                     <Link href="/tournaments/browse" className="neon-button-cyan-sm px-3 py-1.5 text-white text-sm font-medium flex items-center">
