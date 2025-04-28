@@ -4,7 +4,7 @@
 CREATE OR REPLACE FUNCTION calculate_warrior_power_level(warrior_id UUID)
 RETURNS INT AS $$
 DECLARE
-  base_power INT := 1000; -- Starting power level
+  base_power INT := 100; -- Starting power level
   win_bonus INT := 0;
   battle_experience INT := 0;
   tournament_experience INT := 0;

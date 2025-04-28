@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sword, Shield, Trophy, Zap, Users, Calendar, ArrowRight, Clock, MapPin, Eye, Check, Award } from 'lucide-react';
+import { Sword, Shield, Trophy, Zap, Users, Calendar, ArrowRight, Clock, MapPin, Eye, Check, Award, UserCircle, Camera, Building, Star, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/providers/AuthProvider';
@@ -69,6 +69,14 @@ export default function Dashboard() {
     totalDojos: 0
   });
   const [checkInLoading, setCheckInLoading] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [bio, setBio] = useState('');
+  const [warriorName, setWarriorName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [onboardingError, setOnboardingError] = useState('');
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   // Calculate days between two dates
   const getDaysBetween = (startDate: string, endDate: string) => {
@@ -95,6 +103,229 @@ export default function Dashboard() {
 
   const getNextLevelExp = (level: number) => {
     return level * 100;
+  };
+
+  // Handle avatar file selection
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle profile submission
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!authState.user) {
+      setOnboardingError('User not authenticated. Please log in again.');
+      return;
+    }
+    
+    // Validate warrior name if creating a new warrior
+    if (!authState.warrior && !warriorName.trim()) {
+      setOnboardingError('Please enter a name for your warrior.');
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      setOnboardingError('');
+      
+      // Upload avatar if selected
+      let avatarUrl = authState.profile?.avatar_url || null;
+      
+      if (avatarFile) {
+        try {
+          const fileExt = avatarFile.name.split('.').pop();
+          const fileName = `${authState.user.id}-${Date.now()}.${fileExt}`;
+          const filePath = `${authState.user.id}/${fileName}`;
+          
+          // Use the correct bucket name that exists in Supabase
+          const bucketName = 'warrior-profile';
+          
+          console.log(`Attempting to upload avatar to ${bucketName}/${filePath}`);
+          
+          // Upload the file
+          const { error: uploadError, data: uploadData } = await supabase.storage
+            .from(bucketName)
+            .upload(filePath, avatarFile, {
+              upsert: true,
+              cacheControl: '3600'
+            });
+            
+          if (uploadError) {
+            console.error('Avatar upload error details:', JSON.stringify(uploadError, null, 2));
+            throw uploadError;
+          }
+          
+          console.log('Avatar upload successful, data:', uploadData);
+          
+          // Get public URL instead of signed URL
+          const { data: publicUrlData } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(filePath);
+            
+          if (!publicUrlData || !publicUrlData.publicUrl) {
+            console.error('Failed to get public URL');
+            throw new Error('Failed to get public URL');
+          }
+          
+          avatarUrl = publicUrlData.publicUrl;
+          console.log('Avatar public URL:', avatarUrl);
+        } catch (uploadError) {
+          console.error('Error uploading avatar:');
+          if (uploadError instanceof Error) {
+            console.error('Error name:', uploadError.name);
+            console.error('Error message:', uploadError.message);
+            console.error('Error stack:', uploadError.stack);
+          } else {
+            console.error('Unknown error type:', typeof uploadError);
+            console.error('Error value:', uploadError);
+          }
+          console.log('Avatar upload failed, will proceed with profile update only');
+          // Continue with existing avatar
+        }
+      }
+      
+      // Prepare profile update data
+      const profileUpdateData: {
+        full_name: string;
+        updated_at: string;
+        avatar_url?: string | null;
+      } = {
+        full_name: bio, // Store bio in the full_name field since there's no dedicated bio field
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only include avatar_url if we have one
+      if (avatarUrl !== null) {
+        profileUpdateData.avatar_url = avatarUrl;
+      }
+      
+      console.log('Updating profile with:', profileUpdateData);
+      
+      // Update profile
+      const { error: updateError, data: profileData } = await supabase
+        .from('profiles')
+        .update(profileUpdateData)
+        .eq('id', authState.user.id)
+        .select();
+        
+      if (updateError) {
+        console.error('Profile update error details:', JSON.stringify(updateError, null, 2));
+        throw updateError;
+      }
+      
+      console.log('Profile update successful:', profileData);
+      
+      // Check if the user already has a warrior
+      if (!authState.warrior) {
+        console.log('No warrior found, creating one...');
+        
+        // Create a new warrior for the user
+        const { data: warrior, error: warriorError } = await supabase
+          .from('warriors')
+          .insert({
+            name: warriorName,
+            specialty: 'MIXED', // Default specialty
+            owner_id: authState.user.id,
+            power_level: 100,
+            rank: 0,
+            win_rate: 0,
+            experience: 0,
+            level: 1,
+            energy: 100,
+            energy_last_updated: new Date().toISOString(),
+            avatar_url: avatarUrl,
+            metadata: {
+              bio: bio,
+              socialLinks: {
+                github: '',
+                twitter: '',
+                website: ''
+              }
+            }
+          })
+          .select()
+          .single();
+        
+        if (warriorError) {
+          console.error('Error creating warrior:', warriorError);
+          throw warriorError;
+        }
+        
+        console.log('Warrior created successfully:', warrior);
+        
+        // Update auth state with the new warrior
+        setAuthState({
+          ...authState,
+          warrior: warrior,
+          profile: profileData[0] || authState.profile,
+          onboardingStep: 'complete'
+        });
+      } else {
+        // Update local state
+        if (authState.profile) {
+          const updatedProfile = {
+            ...authState.profile,
+            full_name: bio,
+            updated_at: new Date().toISOString()
+          };
+          
+          // Only update avatar_url if we have a new one
+          if (avatarUrl !== null) {
+            updatedProfile.avatar_url = avatarUrl;
+          }
+          
+          setAuthState({
+            ...authState,
+            profile: updatedProfile,
+            onboardingStep: 'complete'
+          });
+        }
+      }
+      
+      // Mark onboarding as complete
+      setOnboardingComplete(true);
+      setTimeout(() => {
+        setShowOnboarding(false);
+      }, 1500); // Show completion animation for 1.5 seconds
+      
+    } catch (error) {
+      console.error('Error updating profile:');
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      } else if (error && typeof error === 'object') {
+        try {
+          console.error('Error object:', JSON.stringify(error, null, 2));
+        } catch (jsonError) {
+          console.error('Error object (not JSON serializable):', error);
+          console.error('Error object properties:', Object.keys(error as object));
+        }
+      } else {
+        console.error('Unknown error type:', typeof error);
+        console.error('Error value:', error);
+      }
+      setOnboardingError('Failed to update profile. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Skip onboarding for now
+  const skipOnboarding = () => {
+    setShowOnboarding(false);
   };
 
   useEffect(() => {
@@ -157,10 +388,38 @@ export default function Dashboard() {
           query = query.or(`challenger_id.eq.${authState.warrior.id},defender_id.eq.${authState.warrior.id}`);
         }
         
-        const { data: battles, error: battlesError } = await query;
+        const { data: battlesData, error: battlesError } = await query;
         if (battlesError) throw battlesError;
         
-        setRecentBattles(battles || []);
+        // Map the data to match the Battle interface
+        const formattedBattles: Battle[] = (battlesData || []).map(battle => {
+          // Extract challenger and defender data correctly
+          // They come as arrays with a single object, so we need to get the first element
+          const challenger = Array.isArray(battle.challenger) && battle.challenger.length > 0 
+            ? battle.challenger[0] 
+            : { name: 'Unknown', avatar_url: null };
+            
+          const defender = Array.isArray(battle.defender) && battle.defender.length > 0 
+            ? battle.defender[0] 
+            : { name: 'Unknown', avatar_url: null };
+            
+          return {
+            id: battle.id,
+            status: battle.status,
+            created_at: battle.created_at,
+            metadata: battle.metadata,
+            challenger: {
+              name: challenger.name || 'Unknown',
+              avatar_url: challenger.avatar_url || null
+            },
+            defender: {
+              name: defender.name || 'Unknown',
+              avatar_url: defender.avatar_url || null
+            }
+          };
+        });
+        
+        setRecentBattles(formattedBattles);
         
         // Fetch popular dojos
         const { data: dojos, error: dojosError } = await supabase
@@ -222,6 +481,26 @@ export default function Dashboard() {
     
     fetchDashboardData();
   }, [supabase, authState.user, authState.warrior]);
+
+  useEffect(() => {
+    // Initialize profile data when auth state changes
+    if (authState.profile) {
+      setBio(authState.profile.full_name || '');
+      if (authState.profile.avatar_url) {
+        setAvatarPreview(authState.profile.avatar_url);
+      }
+      
+      // Initialize warrior name with username if no warrior exists yet
+      if (!authState.warrior) {
+        setWarriorName(authState.profile.username || '');
+      }
+    }
+    
+    // Show onboarding if user is authenticated but hasn't completed onboarding
+    if (authState.isAuthenticated && !authState.loading && authState.onboardingStep !== 'complete') {
+      setShowOnboarding(true);
+    }
+  }, [authState]);
 
   const handleDailyCheckIn = async () => {
     if (!authState.warrior) return;
@@ -532,7 +811,7 @@ export default function Dashboard() {
                 
                 <div>
                   <Link href={`/warriors/${authState.warrior.id}`} className="text-cyan hover:text-cyan-light text-sm transition-colors group" target="_blank">
-                    <h3 className="text-xl font-bold text-white group-hover:text-shadow-cyan transition-all duration-300">{authState.warrior.name}</h3>
+                    <h3 className="text-xl font-bold text-white group-hover:text-cyan transition-all duration-300">{authState.warrior.name}</h3>
                   </Link>
                   <p className="text-gray-400 text-sm">Power Level: {authState.warrior.power_level}</p>
                   <p className="text-gray-400 text-sm">Rank: #{authState.warrior.rank}</p>
@@ -808,12 +1087,189 @@ export default function Dashboard() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
+      
+      <main className="flex-grow container mx-auto px-4 py-8">
+        {/* Onboarding Overlay */}
+        {showOnboarding && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+            
+            {/* Japanese characters floating in background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="text-vertical-left text-3xl font-serif-jp tracking-widest text-cyan/10 absolute top-1/4 left-8">
+                <div>戦士</div>
+                <div>初期化</div>
+                <div>プロフィール</div>
+              </div>
+              <div className="text-vertical-right text-3xl font-serif-jp tracking-widest text-red/10 absolute top-1/3 right-8">
+                <div>ナカモト</div>
+                <div>リーグ</div>
+                <div>登録</div>
+              </div>
+            </div>
+            
+            {/* Glowing border effect */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="w-full h-full border-2 border-cyan/30 animate-pulse-slow"></div>
+            </div>
+            
+            <div className="relative max-w-md w-full mx-4 overflow-hidden">
+              {/* Cyberpunk styled card */}
+              <div className="bg-gray-900/90 border border-gray-800 rounded-lg shadow-neon-cyan overflow-hidden">
+                {/* Glitch effect header */}
+                <div className="relative bg-gradient-to-r from-cyan/20 to-red/20 p-4 border-b border-gray-800">
+                  <div className="absolute top-0 left-0 w-full h-full bg-glitch opacity-10"></div>
+                  <h2 className="text-2xl font-bold text-cyan glitch-text flex items-center gap-2">
+                    <span className="relative z-10">戦士初期化</span>
+                    <span className="text-sm text-gray-400">WARRIOR SETUP</span>
+                  </h2>
+                  <p className="text-gray-400 mt-1 font-mono text-sm flex items-center gap-2">
+                    <span className="text-xs font-serif-jp text-red">ナカモト・リーグ</span>
+                    <span>SYS://PROFILE_CONFIG</span>
+                  </p>
+                </div>
+                
+                {/* Content */}
+                <div className="p-6">
+                  {onboardingError && (
+                    <div className="bg-red-900/50 border border-red-700 text-red-100 p-3 rounded-md mb-4 flex items-start">
+                      <div className="text-red-400 mr-2 mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="text-sm font-mono">{onboardingError}</div>
+                    </div>
+                  )}
+                  
+                  {onboardingComplete ? (
+                    <div className="text-center py-8 space-y-4">
+                      <div className="inline-block p-3 rounded-full bg-cyan/20 mb-2">
+                        <Check className="w-8 h-8 text-cyan animate-pulse" />
+                      </div>
+                      <h3 className="text-xl font-bold text-cyan flex justify-center items-center gap-2">
+                        <span className="font-serif-jp">完了</span>
+                        <span>Profile Initialized</span>
+                      </h3>
+                      <p className="text-gray-400">Your warrior profile has been successfully configured.</p>
+                      <div className="h-2 bg-gray-800 rounded-full mt-4 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-cyan to-red w-full animate-progress"></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Warrior name input - positioned first */}
+                      <div className="mb-4">
+                        <label className="block mb-1 flex items-center gap-2">
+                          <span className="text-cyan text-sm font-serif-jp">戦士名</span>
+                          <span className="text-gray-400 text-xs font-mono">WARRIOR NAME</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={warriorName}
+                            onChange={(e) => setWarriorName(e.target.value)}
+                            className="w-full bg-gray-800/80 border border-gray-700 rounded p-2 text-white focus:border-cyan focus:outline-none focus:shadow-neon-cyan-sm pl-3 font-mono"
+                            placeholder="Enter your warrior's name"
+                            required
+                          />
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyan"></div>
+                        </div>
+                      </div>
+                      
+                      {/* Bio input */}
+                      <div className="mb-4">
+                        <label className="block mb-1 flex items-center gap-2">
+                          <span className="text-cyan text-sm font-serif-jp">バイオ</span>
+                          <span className="text-gray-400 text-xs font-mono">BIO</span>
+                        </label>
+                        <div className="relative">
+                          <textarea
+                            value={bio}
+                            onChange={(e) => setBio(e.target.value)}
+                            className="w-full h-24 bg-gray-800/80 border border-gray-700 rounded p-2 text-white focus:border-cyan focus:outline-none focus:shadow-neon-cyan-sm pl-3 font-mono"
+                            placeholder="Tell us about yourself..."
+                          ></textarea>
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyan"></div>
+                        </div>
+                      </div>
+                      
+                      {/* Avatar upload with cyberpunk styling */}
+                      <div className="flex flex-col items-center mb-4">
+                        <div className="relative group">
+                          <div className="w-32 h-32 rounded-full bg-gray-800 border-2 border-cyan overflow-hidden flex items-center justify-center shadow-neon-cyan">
+                            {avatarPreview ? (
+                              <img 
+                                src={avatarPreview} 
+                                alt="Avatar preview" 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <UserCircle className="w-20 h-20 text-gray-600" />
+                            )}
+                            <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+                          </div>
+                          <label className="absolute bottom-0 right-0 bg-red text-white p-2 rounded-full cursor-pointer group-hover:bg-red-light transition-colors shadow-neon-red">
+                            <Camera className="w-4 h-4" />
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={handleAvatarChange}
+                            />
+                          </label>
+                          <div className="absolute -inset-1 bg-cyan/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <span className="text-cyan text-sm font-serif-jp">アバター</span>
+                          <span className="text-gray-400 text-xs font-mono">UPLOAD AVATAR</span>
+                        </div>
+                      </div>
+                      
+                      {/* Gamified progress indicator */}
+                      <div className="h-1 bg-gray-800 rounded-full mt-4">
+                        <div className="h-full bg-gradient-to-r from-cyan to-red" style={{ width: avatarFile ? '100%' : '50%' }}></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Footer with cyberpunk styling */}
+                <div className="border-t border-gray-800 p-4 flex justify-between items-center bg-gray-900/80">
+                  <button
+                    onClick={skipOnboarding}
+                    className="text-gray-400 hover:text-white transition-colors font-mono text-sm flex items-center gap-1"
+                  >
+                    <span className="text-xs font-serif-jp text-red">スキップ</span>
+                    <span>SKIP</span>
+                  </button>
+                  
+                  {!onboardingComplete && (
+                    <button
+                      onClick={handleProfileSubmit}
+                      disabled={isSubmitting}
+                      className={`bg-gradient-to-r from-cyan to-cyan-dark text-white px-4 py-2 rounded flex items-center gap-2 transition-all hover:shadow-neon-cyan-sm ${
+                        isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+                      }`}
+                    >
+                      <span className="text-xs font-serif-jp">確認</span>
+                      <span className="font-mono">{isSubmitting ? 'PROCESSING...' : 'CONFIRM'}</span>
+                      {!isSubmitting && <Zap className="w-4 h-4" />}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Dashboard content */}
         {renderContent()}
-      </div>
+      </main>
+      
       <Footer />
-    </>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ export interface AuthState {
   accountType: 'warrior' | 'dojo' | null;
   loading: boolean;
   isAuthenticated: boolean;
+  onboardingStep: 'profile' | 'entity' | 'complete' | null;
 }
 
 interface AuthContextType {
@@ -34,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClientComponentClient<Database>();
   const router = useRouter();
   
-  const [authState, setAuthState] = useState<AuthState>({
+  const initialState: AuthState = {
     user: null,
     profile: null,
     warrior: null,
@@ -42,7 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     accountType: null,
     loading: true,
     isAuthenticated: false,
-  });
+    onboardingStep: null,
+  };
+
+  const [authState, setAuthState] = useState<AuthState>(initialState);
 
   // Fetch user data from Supabase
   const fetchUserData = async (user: User | null) => {
@@ -55,49 +59,118 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accountType: null,
         loading: false,
         isAuthenticated: false,
+        onboardingStep: null,
       });
       return;
     }
 
     try {
-      // Fetch profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
       // Extract account type from user metadata
       const accountType = user.user_metadata?.account_type as 'warrior' | 'dojo' | null;
-
-      // Fetch warrior if profile exists
+      
+      // Initialize variables
+      let profile = null;
       let warrior = null;
-      if (profile) {
-        const { data: warriorData, error: warriorError } = await supabase
-          .from('warriors')
-          .select('*')
-          .eq('owner_id', user.id)
-          .maybeSingle();
+      let dojo = null;
 
-        if (!warriorError || warriorError.code !== 'PGRST116') { // PGRST116 means no rows returned
-          warrior = warriorData;
+      // Fetch profile
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          if (profileError.code === 'PGRST116') { // No profile found
+            // Create a new profile
+            try {
+              // Generate a default username from email
+              const emailUsername = user.email?.split('@')[0] || 'user';
+              const timestamp = Date.now().toString().slice(-4);
+              const defaultUsername = `${emailUsername}${timestamp}`;
+              
+              const { data: newProfile, error: createProfileError } = await supabase
+                .from('profiles')
+                .insert([{ 
+                  id: user.id, 
+                  username: defaultUsername, // Required field
+                  full_name: null,
+                  avatar_url: null,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }])
+                .select()
+                .single();
+                
+              if (createProfileError) {
+                console.error('Error creating profile:', createProfileError);
+              } else {
+                profile = newProfile;
+              }
+            } catch (err) {
+              console.error('Exception creating profile:', err);
+            }
+          } else {
+            console.error('Error fetching profile:', profileError);
+          }
+        } else {
+          profile = profileData;
+        }
+      } catch (err) {
+        console.error('Exception in profile operations:', err);
+      }
+
+      // Fetch warrior if account type is warrior
+      if (accountType === 'warrior') {
+        try {
+          const { data: warriorData, error: warriorError } = await supabase
+            .from('warriors')
+            .select('*')
+            .eq('owner_id', user.id)
+            .maybeSingle();
+
+          if (warriorError) {
+            console.error('Error checking warrior:', warriorError);
+          } else if (warriorData) {
+            warrior = warriorData;
+          }
+        } catch (err) {
+          console.error('Exception checking warrior:', err);
         }
       }
 
-      // Fetch dojo if profile exists
-      let dojo = null;
-      if (profile) {
-        const { data: dojoData, error: dojoError } = await supabase
-          .from('dojos')
-          .select('*')
-          .eq('owner_id', user.id)
-          .maybeSingle();
+      // Fetch dojo if account type is dojo
+      if (accountType === 'dojo') {
+        try {
+          const { data: dojoData, error: dojoError } = await supabase
+            .from('dojos')
+            .select('*')
+            .eq('owner_id', user.id)
+            .maybeSingle();
 
-        if (!dojoError || dojoError.code !== 'PGRST116') { // PGRST116 means no rows returned
-          dojo = dojoData;
+          if (dojoError) {
+            console.error('Error checking dojo:', dojoError);
+          } else if (dojoData) {
+            dojo = dojoData;
+          }
+        } catch (err) {
+          console.error('Exception checking dojo:', err);
         }
+      }
+
+      // Determine onboarding step
+      let onboardingStep: 'profile' | 'entity' | 'complete' | null = null;
+      
+      if (!profile || !profile.username || !profile.avatar_url) {
+        // If profile is missing or incomplete, first step is to complete profile
+        onboardingStep = 'profile';
+      } else if ((accountType === 'warrior' && !warrior) || (accountType === 'dojo' && !dojo)) {
+        // If profile is complete but entity (warrior/dojo) is missing, next step is to create entity
+        onboardingStep = 'entity';
+      } else {
+        // If both profile and entity are complete, onboarding is done
+        onboardingStep = 'complete';
       }
 
       setAuthState({
@@ -108,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accountType,
         loading: false,
         isAuthenticated: true,
+        onboardingStep,
       });
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -118,7 +192,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         dojo: null,
         accountType: null,
         loading: false,
-        isAuthenticated: false,
+        isAuthenticated: true, // Still authenticated even if we couldn't fetch all data
+        onboardingStep: 'profile', // Default to profile step if there's an error
       });
     }
   };
@@ -145,27 +220,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
   }, [supabase, router]);
 
-  // After auth state changes, check if we need to redirect to registration pages
+  // After auth state changes, check if we need to redirect for onboarding
   useEffect(() => {
     // Only proceed if auth state has loaded and we have a user
     if (!authState.loading && authState.user) {
-      const { accountType, warrior, dojo } = authState;
+      const { accountType, warrior, dojo, onboardingStep } = authState;
       
-      // If user is on a login/register page, redirect them to dashboard or registration
+      // If user is on a login/register page, redirect them to appropriate onboarding step
       const currentPath = window.location.pathname;
       if (currentPath.startsWith('/login') || currentPath.startsWith('/register') || currentPath === '/') {
-        // If user has chosen warrior but doesn't have one, redirect to warrior registration
-        if (accountType === 'warrior' && !warrior) {
-          router.push('/dashboard/warriors/register');
-        } 
-        // If user has chosen dojo but doesn't have one, redirect to dojo registration
-        else if (accountType === 'dojo' && !dojo) {
-          router.push('/dashboard/dojos/register');
-        }
-        // // Otherwise, go to the dashboard
-        // else {
-        //   router.push('/dashboard');
-        // }
+        // First, redirect to dashboard which will handle onboarding
+        router.push('/dashboard');
+      } else if (currentPath.startsWith('/dashboard')) {
+        // If user is already on dashboard, no need to redirect
+        // The dashboard will handle showing the appropriate onboarding UI based on onboardingStep
       }
     }
   }, [authState, router]);
@@ -200,7 +268,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) throw error;
-      // Don't fetchUserData here as we need to wait for email verification
+      
+      // Wait a moment for the auth to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Now fetch user data
+      if (data.user) {
+        await fetchUserData(data.user);
+      }
+      
       setAuthState((prev) => ({ ...prev, loading: false }));
       return data;
     } catch (error) {
@@ -222,6 +298,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accountType: null,
         loading: false,
         isAuthenticated: false,
+        onboardingStep: null,
       });
       router.push('/');
     } catch (error) {

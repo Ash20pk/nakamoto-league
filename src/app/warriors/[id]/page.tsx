@@ -214,20 +214,29 @@ const WarriorProfile = () => {
         // Transform battle data to include opponent info
         const transformedBattles: Battle[] = battleData.map(battle => {
           const isChallenger = battle.challenger_id === warriorId;
-          // Ensure opponent is a single object with the correct properties
-          const opponentData = isChallenger ? battle.defender : battle.challenger;
+          
+          // Extract challenger and defender data correctly - they come as arrays with a single object
+          const challenger = Array.isArray(battle.challenger) && battle.challenger.length > 0 
+            ? battle.challenger[0] 
+            : { id: '', name: 'Unknown', avatar_url: null };
+            
+          const defender = Array.isArray(battle.defender) && battle.defender.length > 0 
+            ? battle.defender[0] 
+            : { id: '', name: 'Unknown', avatar_url: null };
+          
+          // Get the opponent based on whether the warrior is the challenger or defender
+          const opponentData = isChallenger ? defender : challenger;
           const isWinner = battle.winner_id === warriorId;
           
-          // Make sure opponentData is treated as a single object, not an array
           return {
             id: battle.id,
             status: battle.status,
             created_at: battle.created_at,
             completed_at: battle.completed_at,
             opponent: {
-              id: typeof opponentData === 'object' && opponentData !== null ? opponentData.id : '',
-              name: typeof opponentData === 'object' && opponentData !== null ? opponentData.name : '',
-              avatar_url: typeof opponentData === 'object' && opponentData !== null ? opponentData.avatar_url : null
+              id: opponentData.id || '',
+              name: opponentData.name || 'Unknown',
+              avatar_url: opponentData.avatar_url || null
             },
             isWinner
           };
@@ -324,24 +333,19 @@ const WarriorProfile = () => {
       
       console.log('Upload successful, data:', uploadData);
       
-      // Get the public URL - using createSignedUrl for better access control
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      // Get public URL instead of signed URL
+      const { data: publicUrlData } = supabase.storage
         .from(bucketName)
-        .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year expiry
+        .getPublicUrl(filePath);
         
-      if (signedUrlError) {
-        console.error('Error creating signed URL:', signedUrlError);
-        throw signedUrlError;
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        console.error('Failed to get public URL');
+        throw new Error('Failed to get public URL');
       }
       
-      console.log('Signed URL data:', signedUrlData);
+      console.log('Public URL data:', publicUrlData);
       
-      if (!signedUrlData || !signedUrlData.signedUrl) {
-        console.error('Failed to get signed URL');
-        throw new Error('Failed to get signed URL');
-      }
-      
-      const publicUrl = signedUrlData.signedUrl;
+      const publicUrl = publicUrlData.publicUrl;
       
       // Set the avatar preview to the new URL
       setAvatarPreview(publicUrl);
@@ -674,7 +678,9 @@ const WarriorProfile = () => {
                     <Trophy className="w-5 h-5 text-yellow-500" />
                     <span className="text-gray-400 text-sm">Rank</span>
                   </div>
-                  <p className="text-2xl font-bold text-white">#{warrior.rank}</p>
+                  <p className="text-2xl font-bold text-white">
+                    {warrior.rank === 0 ? 'Unranked' : `#${warrior.rank}`}
+                  </p>
                 </div>
                 
                 <div className="bg-slate-900/50 p-4 rounded-lg">
@@ -893,7 +899,7 @@ const WarriorProfile = () => {
                     </div>
                   ) : (
                     <p className="text-gray-300 mb-4">
-                      {warrior.metadata?.bio || `${warrior.name} is a skilled warrior specializing in ${warrior.specialty.replace('_', ' ')} techniques. With a power level of ${warrior.power_level} and a rank of #${warrior.rank}, they are a formidable opponent in the Nakamoto League.`}
+                      {warrior.metadata?.bio || `${warrior.name} is a skilled warrior specializing in ${warrior.specialty.replace('_', ' ')} techniques. With a power level of ${warrior.power_level} ${warrior.rank === 0 ? 'and currently Unranked' : `and a rank of #${warrior.rank}`}, they are a formidable opponent in the Nakamoto League.`}
                     </p>
                   )}
                   

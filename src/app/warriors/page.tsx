@@ -220,7 +220,9 @@ const WarriorsPage = () => {
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <div className="flex items-center gap-1">
                       <Trophy size={16} className="text-yellow-500" />
-                      <span className="text-sm text-slate-300">Rank #{warrior.rank}</span>
+                      <span className="text-sm text-slate-300">
+                        {warrior.rank === 0 ? 'Unranked' : `Rank #${warrior.rank}`}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Sword size={16} className="text-blue-500" />

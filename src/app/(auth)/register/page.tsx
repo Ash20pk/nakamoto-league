@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, User, ArrowRight, Sword, Building2 } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Navbar from '@/components/Navbar';
@@ -21,7 +21,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    accountType: 'warrior' // 'warrior' or 'dojo'
+    accountType: 'warrior' // Default to warrior
   });
   
   // Animation state
@@ -183,62 +183,21 @@ export default function RegisterPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Account Type Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
-                  Choose Your Path
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    className={`p-4 border flex flex-col items-center justify-center gap-2 transition-all ${
-                      formData.accountType === 'warrior'
-                        ? 'bg-red/20 border-red shadow-neon-red text-white'
-                        : 'bg-black/30 border-gray-700 text-gray-400 hover:bg-red/10 hover:border-red/30'
-                    }`}
-                    onClick={() => setFormData(prev => ({ ...prev, accountType: 'warrior' }))}
-                  >
-                    <Sword className={`w-6 h-6 ${formData.accountType === 'warrior' ? 'text-red' : 'text-gray-500'}`} />
-                    <span className="font-serif-jp">Warrior</span>
-                    <span className="text-xs text-gray-500">Individual Fighter</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`p-4 border flex flex-col items-center justify-center gap-2 transition-all ${
-                      formData.accountType === 'dojo'
-                        ? 'bg-cyan/20 border-cyan shadow-neon-cyan text-white'
-                        : 'bg-black/30 border-gray-700 text-gray-400 hover:bg-cyan/10 hover:border-cyan/30'
-                    }`}
-                    onClick={() => setFormData(prev => ({ ...prev, accountType: 'dojo' }))}
-                  >
-                    <Building2 className={`w-6 h-6 ${formData.accountType === 'dojo' ? 'text-cyan' : 'text-gray-500'}`} />
-                    <span className="font-serif-jp">Dojo</span>
-                    <span className="text-xs text-gray-500">Organization</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent my-2"></div>
-
               {/* Username Field */}
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-400 mb-2 flex items-center">
-                  <User className="w-4 h-4 mr-2 text-purple" />
-                  {formData.accountType === 'warrior' ? 'Warrior Name' : 'Dojo Name'}
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    className="w-full bg-black border border-gray-700 py-3 px-4 text-white focus:outline-none focus:border-purple focus:shadow-neon-purple/20 transition-colors"
-                    placeholder={formData.accountType === 'warrior' ? "Enter your warrior name" : "Enter your dojo name"}
-                    required
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-purple/30 to-red/30"></div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-500" />
                 </div>
+                <input
+                  type="text"
+                  name="username"
+                  id="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  required
+                  className="bg-black/30 border border-gray-700 text-white placeholder-gray-500 pl-10 pr-4 py-2 w-full focus:ring-cyan focus:border-cyan focus:outline-none"
+                  placeholder="Username"
+                />
               </div>
 
               {/* Email Field */}
@@ -313,9 +272,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading || success}
-                className={`w-full py-3 text-white font-medium transition-all hover:scale-[1.02] disabled:opacity-50 relative overflow-hidden group ${
-                  formData.accountType === 'warrior' ? 'neon-button-red' : 'neon-button-cyan'
-                }`}
+                className={`w-full py-3 text-white font-medium transition-all hover:scale-[1.02] disabled:opacity-50 relative overflow-hidden group neon-button-red`}
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
@@ -324,7 +281,7 @@ export default function RegisterPage() {
                   </span>
                 ) : (
                   <span className="flex items-center justify-center">
-                    {formData.accountType === 'warrior' ? 'Register as Warrior' : 'Register as Dojo'}
+                    Register as Warrior
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 )}

@@ -12,6 +12,7 @@ const Navbar = () => {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -42,6 +43,26 @@ const Navbar = () => {
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.getElementById('user-dropdown');
+      const dropdownButton = document.getElementById('dropdown-button');
+      
+      if (
+        dropdown && 
+        dropdownButton && 
+        !dropdown.contains(event.target as Node) && 
+        !dropdownButton.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <nav 
@@ -137,40 +158,51 @@ const Navbar = () => {
                   <Sword className="w-4 h-4" />
                 </Link>
 
-                <div className="relative group">
+                <div className="relative">
                   <button 
+                    id="dropdown-button"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
                     className="flex items-center gap-2 p-2 hover:bg-gray-900/50 rounded transition-colors"
                     aria-label="User menu"
+                    aria-expanded={dropdownOpen}
+                    aria-controls="user-dropdown"
                   >
-                    <User className="w-5 h-5 text-gray-300 group-hover:text-cyan transition-colors" />
-                    <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-cyan transition-colors" />
+                    <User className="w-5 h-5 text-gray-300 hover:text-cyan transition-colors" />
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  <div className="absolute right-0 mt-2 w-48 py-2 bg-gray-900 rounded border border-gray-800 shadow-neon-subtle hidden group-hover:block backdrop-blur-md">
-                    <div className="border-l-2 border-cyan/50 mx-3 px-2 py-1 text-xs text-gray-500 uppercase">
-                      {authState.user.email}
+                  {dropdownOpen && (
+                    <div 
+                      id="user-dropdown"
+                      className="absolute right-0 mt-2 w-48 py-2 bg-gray-900 rounded border border-gray-800 shadow-neon-subtle backdrop-blur-md z-50"
+                    >
+                      <div className="border-l-2 border-cyan/50 mx-3 px-2 py-1 text-xs text-gray-500 uppercase">
+                        {authState.user.email}
+                      </div>
+                      <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent my-2"></div>
+                      <Link
+                        href="/dashboard/settings"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-cyan"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        Settings
+                      </Link>
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-cyan"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent my-2"></div>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-red"
+                      >
+                        Sign Out
+                      </button>
                     </div>
-                    <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent my-2"></div>
-                    <Link
-                      href="/dashboard/settings"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-cyan"
-                    >
-                      Settings
-                    </Link>
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-cyan"
-                    >
-                      Dashboard
-                    </Link>
-                    <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent my-2"></div>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-red"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
+                  )}
                 </div>
               </>
             ) : (
