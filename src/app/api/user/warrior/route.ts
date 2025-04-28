@@ -21,7 +21,23 @@ export async function GET(req: NextRequest) {
     const { data: warrior, error: warriorError } = await supabase
       .from('warriors')
       .select(`
-        *,
+        id,
+        name,
+        specialty,
+        avatar_url,
+        bio,
+        rank,
+        power_level,
+        win_rate,
+        energy,
+        energy_last_updated,
+        experience,
+        level,
+        last_check_in,
+        created_at,
+        updated_at,
+        owner_id,
+        dojo_id,
         dojos (id, name, location, banner_url)
       `)
       .eq('owner_id', userId)

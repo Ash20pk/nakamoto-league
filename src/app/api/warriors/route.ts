@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
       .from('warriors')
       .select(`
         id, name, avatar_url, power_level, rank, specialty, dojo_id, owner_id, created_at, updated_at, metadata,
+        win_rate, experience, level, energy, energy_last_updated, last_check_in,
         dojos:dojo_id (id, name)
       `, { count: 'exact' });
     
@@ -111,6 +112,11 @@ export async function POST(req: NextRequest) {
         owner_id: userId,
         power_level: 100,
         rank: 1000,
+        win_rate: 0,
+        experience: 0,
+        level: 1,
+        energy: 100,
+        energy_last_updated: new Date().toISOString(),
         metadata: {
           bio,
           socialLinks

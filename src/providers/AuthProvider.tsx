@@ -10,7 +10,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 type Warrior = Database['public']['Tables']['warriors']['Row'];
 type Dojo = Database['public']['Tables']['dojos']['Row'];
 
-interface AuthState {
+export interface AuthState {
   user: User | null;
   profile: Profile | null;
   warrior: Warrior | null;
@@ -22,8 +22,9 @@ interface AuthState {
 
 interface AuthContextType {
   authState: AuthState;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, accountType: 'warrior' | 'dojo') => Promise<void>;
+  setAuthState: React.Dispatch<React.SetStateAction<AuthState>>;
+  signIn: (email: string, password: string) => Promise<{ user: User | null; session: Session | null; } | void>;
+  signUp: (email: string, password: string, accountType: 'warrior' | 'dojo') => Promise<{ user: User | null; session: Session | null; } | void>;
   signOut: () => Promise<void>;
 }
 
@@ -161,10 +162,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         else if (accountType === 'dojo' && !dojo) {
           router.push('/dashboard/dojos/register');
         }
-        // Otherwise, go to the dashboard
-        else {
-          router.push('/dashboard');
-        }
+        // // Otherwise, go to the dashboard
+        // else {
+        //   router.push('/dashboard');
+        // }
       }
     }
   }, [authState, router]);
@@ -230,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ authState, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ authState, setAuthState, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

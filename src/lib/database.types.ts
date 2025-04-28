@@ -259,6 +259,12 @@ export interface Database {
           power_level: number
           rank: number
           avatar_url: string | null
+          win_rate: number
+          experience?: number
+          level?: number
+          energy?: number
+          energy_last_updated?: string
+          last_check_in?: string
           created_at: string
           updated_at: string
         }
@@ -271,6 +277,12 @@ export interface Database {
           power_level?: number
           rank?: number
           avatar_url?: string | null
+          win_rate?: number
+          experience?: number
+          level?: number
+          energy?: number
+          energy_last_updated?: string
+          last_check_in?: string
           created_at?: string
           updated_at?: string
         }
@@ -283,6 +295,12 @@ export interface Database {
           power_level?: number
           rank?: number
           avatar_url?: string | null
+          win_rate?: number
+          experience?: number
+          level?: number
+          energy?: number
+          energy_last_updated?: string
+          last_check_in?: string
           created_at?: string
           updated_at?: string
         }

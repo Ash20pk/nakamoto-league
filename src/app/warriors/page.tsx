@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
-import { Search, Filter, ChevronDown, Sword, Trophy, Star } from 'lucide-react';
+import { Search, Filter, ChevronDown, Sword, Trophy, Star, Zap } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
@@ -17,6 +17,22 @@ interface WarriorFilters {
   sortOrder: 'asc' | 'desc';
   page: number;
   limit: number;
+}
+
+interface WarriorMetadata {
+  bio?: string;
+  socialLinks?: {
+    github?: string;
+    twitter?: string;
+    website?: string;
+  };
+  avatarBase64?: string;
+}
+
+declare module '@/hooks/useWarrior' {
+  interface Warrior {
+    metadata?: WarriorMetadata;
+  }
 }
 
 const WarriorsPage = () => {
@@ -201,42 +217,33 @@ const WarriorsPage = () => {
                   </div>
                 </div>
                 <div className="p-4">
-                  <div className="flex items-center gap-4 mb-3">
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                     <div className="flex items-center gap-1">
                       <Trophy size={16} className="text-yellow-500" />
                       <span className="text-sm text-slate-300">Rank #{warrior.rank}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Sword size={16} className="text-blue-500" />
-                      <span className="text-sm text-slate-300">Power {warrior.power_level}</span>
+                      <span className="text-sm text-slate-300">Level {warrior.level || 1}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star size={16} className="text-purple-500" />
+                      <span className="text-sm text-slate-300">
+                        {warrior.win_rate ? warrior.win_rate.toFixed(1) : '0'}% Win Rate
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Zap size={16} className="text-cyan" />
+                      <span className="text-sm text-slate-300">
+                        {warrior.energy || 100} Energy
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 mb-4">
-                    <Star size={16} className="text-purple-500" />
-                    <span className="text-sm text-slate-300">
-                      {Math.floor(Math.random() * 100)}% Win Rate
-                    </span>
-                  </div>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <span
-                      className="px-2 py-1 bg-purple-900/30 text-purple-400 rounded-full border border-purple-500/20 text-xs"
-                    >
+                    <span className="px-2 py-1 bg-purple-900/30 text-purple-400 rounded-full border border-purple-500/20 text-xs">
                       {warrior.specialty.replace('_', ' ')}
                     </span>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (authState.warrior) {
-                        router.push(`/dashboard/battles/create?opponent=${warrior.id}`);
-                      } else {
-                        router.push('/auth/login?redirect=/dashboard/warriors/register');
-                      }
-                    }}
-                    className="w-full cyber-gradient py-2 rounded pixel-corners text-white font-medium hover:opacity-90 transition-opacity"
-                  >
-                    Challenge
-                  </button>
                 </div>
               </div>
             ))

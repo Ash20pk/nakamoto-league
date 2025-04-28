@@ -12,6 +12,12 @@ interface Warrior {
   specialty: WarriorSpecialty;
   dojo_id: string | null;
   owner_id: string;
+  win_rate: number;
+  experience?: number;
+  level?: number;
+  energy?: number;
+  energy_last_updated?: string;
+  last_check_in?: string;
   created_at: string;
   updated_at: string;
   dojos?: {

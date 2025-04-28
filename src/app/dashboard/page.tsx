@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sword, Shield, Trophy, Zap, Users, Calendar, ArrowRight, Clock, MapPin, Eye } from 'lucide-react';
+import { Sword, Shield, Trophy, Zap, Users, Calendar, ArrowRight, Clock, MapPin, Eye, Check, Award } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/providers/AuthProvider';
@@ -10,6 +10,9 @@ import type { Database } from '@/lib/database.types';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { usePermissions } from '@/hooks/usePermissions';
+
+// Import the AuthState type from AuthProvider
+import type { AuthState } from '@/providers/AuthProvider';
 
 interface Tournament {
   id: string;
@@ -51,7 +54,7 @@ interface Dojo {
 }
 
 export default function Dashboard() {
-  const { authState } = useAuth();
+  const { authState, setAuthState } = useAuth();
   const { isWarrior, isDojo, canCreateTournament, canCreateDojo, canCreateBattle, canJoinTournament, canJoinDojo, canJoinBattle } = usePermissions();
   const supabase = createClientComponentClient<Database>();
   
@@ -65,6 +68,7 @@ export default function Dashboard() {
     totalBattles: 0,
     totalDojos: 0
   });
+  const [checkInLoading, setCheckInLoading] = useState(false);
 
   // Calculate days between two dates
   const getDaysBetween = (startDate: string, endDate: string) => {
@@ -82,6 +86,15 @@ export default function Dashboard() {
       day: 'numeric',
       year: 'numeric'
     }).format(date);
+  };
+
+  const getExpPercentage = (experience: number, level: number) => {
+    const nextLevelExp = getNextLevelExp(level);
+    return Math.min((experience / nextLevelExp) * 100, 100);
+  };
+
+  const getNextLevelExp = (level: number) => {
+    return level * 100;
   };
 
   useEffect(() => {
@@ -209,7 +222,45 @@ export default function Dashboard() {
     
     fetchDashboardData();
   }, [supabase, authState.user, authState.warrior]);
-  
+
+  const handleDailyCheckIn = async () => {
+    if (!authState.warrior) return;
+    
+    setCheckInLoading(true);
+    try {
+      // Call the warrior_daily_check_in function we created in the SQL migration
+      const { data, error } = await supabase
+        .rpc('warrior_daily_check_in', { 
+          p_warrior_id: authState.warrior.id 
+        });
+        
+      if (error) throw error;
+      
+      // Refresh warrior data to get updated energy and last_check_in
+      const { data: warriorData, error: warriorError } = await supabase
+        .from('warriors')
+        .select('*')
+        .eq('id', authState.warrior.id)
+        .single();
+        
+      if (warriorError) throw warriorError;
+      
+      // Update the local state with the new data
+      setAuthState((prev: AuthState) => ({
+        ...prev,
+        warrior: {
+          ...prev.warrior!,
+          energy: warriorData.energy,
+          last_check_in: warriorData.last_check_in
+        }
+      }));
+    } catch (error) {
+      console.error('Error checking in:', error);
+    } finally {
+      setCheckInLoading(false);
+    }
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -480,38 +531,95 @@ export default function Dashboard() {
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-bold text-white">{authState.warrior.name}</h3>
+                  <Link href={`/warriors/${authState.warrior.id}`} className="text-cyan hover:text-cyan-light text-sm transition-colors group" target="_blank">
+                    <h3 className="text-xl font-bold text-white group-hover:text-shadow-cyan transition-all duration-300">{authState.warrior.name}</h3>
+                  </Link>
                   <p className="text-gray-400 text-sm">Power Level: {authState.warrior.power_level}</p>
                   <p className="text-gray-400 text-sm">Rank: #{authState.warrior.rank}</p>
                 </div>
               </div>
               
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Experience</span>
-                  <span className="text-purple">{Math.floor(authState.warrior.power_level / 10)}%</span>
+              {/* Energy Section */}
+              <div className="bg-gray-800/30 rounded-lg p-3 mb-4 border border-cyan/20">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <Zap size={18} className="text-cyan" />
+                    <span className="text-white font-semibold">Energy</span>
+                  </div>
+                  <span className="text-cyan font-medium">
+                    {authState.warrior.energy || 100}/{(authState.warrior.level || 1) * 100}
+                  </span>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+                
+                <div className="w-full bg-gray-800/70 rounded-full h-3 overflow-hidden mb-3">
                   <div 
-                    className="bg-gradient-to-r from-purple-500 to-cyan h-full"
-                    style={{ width: `${Math.floor(authState.warrior.power_level / 10)}%` }}
+                    className="bg-gradient-to-r from-cyan to-blue-400 h-full transition-all duration-500 ease-out"
+                    style={{ width: `${Math.min(((authState.warrior.energy || 100) / ((authState.warrior.level || 1) * 100)) * 100, 100)}%` }}
                   ></div>
                 </div>
+                
+                <div className="text-xs text-gray-400 mb-3">
+                  Energy regenerates over time and is used for battles and tournaments.
+                </div>
+                
+                {/* Daily Check-in Button */}
+                <button
+                  onClick={handleDailyCheckIn}
+                  disabled={checkInLoading || authState.warrior.last_check_in === new Date().toISOString().split('T')[0]}
+                  className={`w-full py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all duration-300 ${
+                    authState.warrior.last_check_in === new Date().toISOString().split('T')[0]
+                      ? 'bg-gray-700/50 text-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-cyan/80 to-blue-500/80 text-white hover:from-cyan hover:to-blue-400 hover:shadow-lg hover:shadow-cyan/20'
+                  }`}
+                >
+                  {checkInLoading ? (
+                    <>
+                      <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                      Processing...
+                    </>
+                  ) : authState.warrior.last_check_in === new Date().toISOString().split('T')[0] ? (
+                    <>
+                      <Check size={16} className="text-green-400" />
+                      Already Checked In Today
+                    </>
+                  ) : (
+                    <>
+                      <Zap size={16} className="text-yellow-300" />
+                      Daily Check-in (+50 Energy)
+                    </>
+                  )}
+                </button>
               </div>
               
-              <div className="flex justify-between">
-                <Link 
-                  href={`/warriors/${authState.warrior.id}`} 
-                  className="text-cyan hover:text-cyan-light text-sm transition-colors"
-                >
-                  View Profile
-                </Link>
-                <Link 
-                  href="/dashboard/warriors/edit" 
-                  className="text-cyan hover:text-cyan-light text-sm transition-colors"
-                >
-                  Edit Warrior
-                </Link>
+              {/* Experience Bar */}
+              <div className="bg-gray-800/30 rounded-lg p-3 mb-4 border border-purple-500/20">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <Award size={18} className="text-purple-500" />
+                    <span className="text-white font-semibold">Experience</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-purple-500 font-medium">Level {authState.warrior.level || 1}</span>
+                  </div>
+                </div>
+                
+                <div className="w-full bg-gray-800/70 rounded-full h-3 overflow-hidden mb-3">
+                  <div 
+                    className="bg-gradient-to-r from-purple-500 to-purple-300 h-full transition-all duration-500 ease-out"
+                    style={{ 
+                      width: `${getExpPercentage(authState.warrior.experience || 0, authState.warrior.level || 1)}%` 
+                    }}
+                  ></div>
+                </div>
+                
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-400">
+                    {authState.warrior.experience || 0} XP
+                  </span>
+                  <span className="text-gray-400">
+                    Next: {getNextLevelExp(authState.warrior.level || 1)} XP
+                  </span>
+                </div>
               </div>
             </div>
           )}

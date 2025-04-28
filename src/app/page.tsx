@@ -25,6 +25,7 @@ import Footer from '@/components/Footer';
 import { useTournament, type Tournament } from '@/hooks/useTournament';
 import { useDojo, type Dojo } from '@/hooks/useDojo';
 import { useWarrior } from '@/hooks/useWarrior';
+import { useRouter } from 'next/navigation';
 
 // Define interfaces for the UI components that match the expected format
 interface UITournament {
@@ -84,6 +85,8 @@ export default function Home() {
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
 
   // Transform API data to UI format
   const transformTournament = (tournament: Tournament): UITournament => {
@@ -535,8 +538,13 @@ export default function Home() {
                   
                   <div className="p-4">
                     <div className="space-y-4">
+                      {/* Top Warriors */}
                       {topWarriors.map((warrior) => (
-                        <div key={warrior.id} className="flex items-center justify-between bg-gray-800/30 border border-gray-800 rounded-md p-3 hover:bg-gray-800/50 transition-colors">
+                        <div 
+                          key={warrior.id} 
+                          onClick={() => router.push(`/warriors/${warrior.id}`)}
+                          className="flex items-center justify-between bg-gray-800/30 border border-gray-800 rounded-md p-3 hover:bg-gray-800/50 transition-colors cursor-pointer"
+                        >
                           <div className="flex items-center">
                             <div className="relative w-10 h-10 rounded-full overflow-hidden border border-cyan-500/30 mr-3">
                               <Image 
@@ -544,6 +552,7 @@ export default function Home() {
                                 alt={warrior.name}
                                 fill
                                 className="object-cover"
+                                unoptimized
                               />
                             </div>
                             <div>
@@ -657,7 +666,7 @@ export default function Home() {
                   </div>
                 </div>
                 
-                {/* Activity Feed */}
+                {/* Activity Feed
                 <div className="bg-gray-900/40 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden">
                   <div className="border-b border-gray-800 p-4 flex justify-between items-center">
                     <h2 className="text-lg font-bold text-white font-serif-jp flex items-center">
@@ -690,7 +699,7 @@ export default function Home() {
                       ))}
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
