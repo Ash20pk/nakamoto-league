@@ -98,7 +98,7 @@ export default {
     },
   },
   plugins: [
-    function({ addUtilities }) {
+    function({ addUtilities }: { addUtilities: (utilities: Record<string, any>) => void }) {
       const newUtilities = {
         '.text-shadow-neon': {
           textShadow: '0 0 5px rgba(255, 255, 255, 0.5)'
@@ -124,6 +124,6 @@ export default {
         }
       }
       addUtilities(newUtilities)
-    }
+    },
   ],
 } satisfies Config;

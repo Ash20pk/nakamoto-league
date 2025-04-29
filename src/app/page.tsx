@@ -113,7 +113,7 @@ export default function Home() {
 
   const transformDojo = (dojo: Dojo): UIDojo => {
     // Generate deterministic values based on the dojo ID
-    const idSum = dojo.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const idSum = dojo.id.split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0);
     
     return {
       id: dojo.id,
@@ -127,7 +127,7 @@ export default function Home() {
 
   const transformWarrior = (warrior: any): UIWarrior => {
     // Generate deterministic values based on the warrior ID
-    const idSum = warrior.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const idSum = warrior.id.split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0);
     
     return {
       id: warrior.id,

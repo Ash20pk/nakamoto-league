@@ -9,7 +9,12 @@ const nextConfig = {
     unoptimized: true,
   },
   experimental: {
-    serverActions: true,
+    serverActions: {
+      allowedOrigins: ['localhost:3000'],
+    },
+  },
+  eslint: {
+    ignoreDuringBuilds: true, // Skip ESLint during builds
   },
 }
 

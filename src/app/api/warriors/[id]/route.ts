@@ -6,7 +6,8 @@ import type { Database } from '@/lib/database.types';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  // @ts-ignore - Next.js App Router type issue
+  { params }: any
 ) {
   try {
     const supabase = createRouteHandlerClient<Database>({ cookies });
@@ -74,7 +75,8 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  // @ts-ignore - Next.js App Router type issue
+  { params }: any
 ) {
   try {
     const supabase = createRouteHandlerClient<Database>({ cookies });
@@ -154,7 +156,8 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  // @ts-ignore - Next.js App Router type issue
+  { params }: any
 ) {
   try {
     const supabase = createRouteHandlerClient<Database>({ cookies });

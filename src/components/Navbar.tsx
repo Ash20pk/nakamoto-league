@@ -6,7 +6,11 @@ import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter, usePathname } from 'next/navigation';
 
-const Navbar = () => {
+interface NavbarProps {
+  activeSection?: string;
+}
+
+const Navbar = ({ activeSection }: NavbarProps) => {
   const { authState, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();

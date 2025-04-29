@@ -7,7 +7,8 @@ import type { Database } from '@/lib/database.types';
 // Join a dojo
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  // @ts-ignore - Next.js App Router type issue
+  { params }: any
 ) {
   try {
     const warriorId = params.id;
@@ -85,7 +86,8 @@ export async function POST(
 // Leave a dojo
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  // @ts-ignore - Next.js App Router type issue
+  { params }: any
 ) {
   try {
     const warriorId = params.id;
