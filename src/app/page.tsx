@@ -60,7 +60,6 @@ interface UIWarrior {
   dojo: string;
   victories: number;
   avatar: string;
-  specialty: string;
 }
 
 interface Activity {
@@ -135,7 +134,6 @@ export default function Home() {
       dojo: warrior.dojos?.name || 'Independent',
       victories: 3 + (idSum % 8), // Deterministic victories based on ID
       avatar: warrior.avatar_url || '/images/default-avatar.jpg',
-      specialty: warrior.specialty || 'Mixed'
     };
   };
 
@@ -562,7 +560,6 @@ export default function Home() {
                                   #{warrior.rank}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-400">{warrior.specialty}</p>
                             </div>
                           </div>
                           <div className="text-right">

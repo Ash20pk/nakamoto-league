@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import type { Database } from '@/lib/database.types';
-import type { WarriorSpecialty } from '@/lib/database.types';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +12,6 @@ export async function GET(req: NextRequest) {
     // Get search params for filtering
     const searchParams = req.nextUrl.searchParams;
     const search = searchParams.get('search');
-    const specialty = searchParams.get('specialty') as WarriorSpecialty | null;
     const sortBy = searchParams.get('sortBy') || 'rank';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
     const page = parseInt(searchParams.get('page') || '1');
@@ -23,7 +21,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from('warriors')
       .select(`
-        id, name, avatar_url, power_level, rank, specialty, dojo_id, owner_id, created_at, updated_at, metadata,
+        id, name, avatar_url, power_level, rank, dojo_id, owner_id, created_at, updated_at, metadata,
         win_rate, experience, level, energy, energy_last_updated, last_check_in,
         dojos:dojo_id (id, name)
       `, { count: 'exact' });
@@ -31,10 +29,6 @@ export async function GET(req: NextRequest) {
     // Apply filters
     if (search) {
       query = query.ilike('name', `%${search}%`);
-    }
-    
-    if (specialty) {
-      query = query.eq('specialty', specialty);
     }
     
     // Apply sorting
@@ -81,11 +75,11 @@ export async function POST(req: NextRequest) {
     
     // Get request body
     const body = await req.json();
-    const { name, specialty, bio, socialLinks } = body;
+    const { name, bio, socialLinks } = body;
     
     // Validate required fields
-    if (!name || !specialty) {
-      return NextResponse.json({ error: 'Name and specialty are required' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
     
     // Check if user already has a warrior
@@ -108,7 +102,6 @@ export async function POST(req: NextRequest) {
       .from('warriors')
       .insert({
         name,
-        specialty,
         owner_id: userId,
         power_level: 1000,
         rank: 0,

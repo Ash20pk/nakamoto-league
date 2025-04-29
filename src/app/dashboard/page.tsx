@@ -235,7 +235,6 @@ export default function Dashboard() {
           .from('warriors')
           .insert({
             name: warriorName,
-            specialty: 'MIXED', // Default specialty
             owner_id: authState.user.id,
             power_level: 100,
             rank: 0,
@@ -488,11 +487,6 @@ export default function Dashboard() {
       setBio(authState.profile.full_name || '');
       if (authState.profile.avatar_url) {
         setAvatarPreview(authState.profile.avatar_url);
-      }
-      
-      // Initialize warrior name with username if no warrior exists yet
-      if (!authState.warrior) {
-        setWarriorName(authState.profile.username || '');
       }
     }
     
@@ -804,9 +798,6 @@ export default function Dashboard() {
                     className="object-cover"
                     unoptimized
                   />
-                  <div className="absolute bottom-0 left-0 right-0 bg-purple-500/70 py-1 text-center text-xs text-white">
-                    {authState.warrior.specialty.replace('_', ' ')}
-                  </div>
                 </div>
                 
                 <div>

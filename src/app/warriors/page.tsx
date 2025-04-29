@@ -4,15 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
 import { Search, Filter, ChevronDown, Sword, Trophy, Star, Zap } from 'lucide-react';
-import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { useWarrior } from '@/hooks/useWarrior';
-import type { WarriorSpecialty } from '@/lib/database.types';
 
 interface WarriorFilters {
   search?: string;
-  specialty?: WarriorSpecialty;
   sortBy: 'rank' | 'powerLevel' | 'winRate';
   sortOrder: 'asc' | 'desc';
   page: number;
@@ -54,13 +51,6 @@ const WarriorsPage = () => {
     page: 1,
   });
   const [showFilters, setShowFilters] = useState(false);
-
-  const specialtyOptions = [
-    'STRIKER',
-    'GRAPPLER',
-    'WEAPONS_MASTER',
-    'MIXED',
-  ];
 
   useEffect(() => {
     fetchWarriors(filters);
@@ -127,21 +117,6 @@ const WarriorsPage = () => {
           {showFilters && (
             <div className="p-4 bg-slate-800/50 border border-purple-500/20 rounded-lg mb-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-slate-300">Specialty</label>
-                  <select
-                    value={filters.specialty || ''}
-                    onChange={(e) => handleFilterChange('specialty', e.target.value || undefined)}
-                    className="w-full p-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-slate-200"
-                  >
-                    <option value="">All Specialties</option>
-                    {specialtyOptions.map(specialty => (
-                      <option key={specialty} value={specialty}>
-                        {specialty.replace('_', ' ')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 text-slate-300">Sort By</label>
                   <select
@@ -240,11 +215,6 @@ const WarriorsPage = () => {
                         {warrior.energy || 100} Energy
                       </span>
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="px-2 py-1 bg-purple-900/30 text-purple-400 rounded-full border border-purple-500/20 text-xs">
-                      {warrior.specialty.replace('_', ' ')}
-                    </span>
                   </div>
                 </div>
               </div>

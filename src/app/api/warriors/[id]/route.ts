@@ -107,12 +107,11 @@ export async function PUT(
     
     // Get request body
     const body = await req.json();
-    const { name, specialty, bio, socialLinks } = body;
+    const { name, bio, socialLinks } = body;
     
     // Create update object
     const updates: any = {};
     if (name) updates.name = name;
-    if (specialty) updates.specialty = specialty;
     
     // Update metadata fields if provided
     if (bio !== undefined || socialLinks !== undefined) {

@@ -106,7 +106,7 @@ export function useWarriorStats() {
     try {
       const { data, error } = await supabase
         .from('warriors')
-        .select('id, name, avatar_url, power_level, rank, win_rate, specialty')
+        .select('id, name, avatar_url, power_level, rank, win_rate')
         .order('rank', { ascending: true })
         .limit(limit);
       

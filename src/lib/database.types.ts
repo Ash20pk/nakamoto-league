@@ -8,7 +8,6 @@ export type Json =
 
 export type TournamentFormat = 'SINGLE_ELIMINATION' | 'DOUBLE_ELIMINATION' | 'ROUND_ROBIN' | 'SWISS'
 export type BattleStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
-export type WarriorSpecialty = 'STRIKER' | 'GRAPPLER' | 'WEAPONS_MASTER' | 'MIXED'
 
 export interface Database {
   public: {
@@ -255,7 +254,6 @@ export interface Database {
           name: string
           owner_id: string
           dojo_id: string | null
-          specialty: WarriorSpecialty
           power_level: number
           rank: number
           avatar_url: string | null
@@ -273,7 +271,6 @@ export interface Database {
           name: string
           owner_id: string
           dojo_id?: string | null
-          specialty: WarriorSpecialty
           power_level?: number
           rank?: number
           avatar_url?: string | null
@@ -291,7 +288,6 @@ export interface Database {
           name?: string
           owner_id?: string
           dojo_id?: string | null
-          specialty?: WarriorSpecialty
           power_level?: number
           rank?: number
           avatar_url?: string | null
@@ -315,7 +311,6 @@ export interface Database {
     Enums: {
       battle_status: BattleStatus
       tournament_format: TournamentFormat
-      warrior_specialty: WarriorSpecialty
     }
   }
 }

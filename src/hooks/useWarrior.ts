@@ -1,7 +1,6 @@
 // src/hooks/useWarrior.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
-import type { WarriorSpecialty } from '@/lib/database.types';
 
 interface Warrior {
   id: string;
@@ -9,7 +8,6 @@ interface Warrior {
   avatar_url: string | null;
   power_level: number;
   rank: number;
-  specialty: WarriorSpecialty;
   dojo_id: string | null;
   owner_id: string;
   win_rate: number;
@@ -40,7 +38,6 @@ interface Warrior {
 
 interface WarriorFilters {
   search?: string;
-  specialty?: WarriorSpecialty;
   sortBy?: 'rank' | 'powerLevel' | 'winRate';
   sortOrder?: 'asc' | 'desc';
   page?: number;
@@ -54,7 +51,6 @@ interface WarriorList {
 
 interface WarriorFormData {
   name: string;
-  specialty: WarriorSpecialty;
   bio?: string;
   socialLinks?: {
     github?: string;
@@ -84,7 +80,6 @@ export function useWarrior() {
       // Build query string from filters
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);
-      if (filters.specialty) params.append('specialty', filters.specialty);
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
       if (filters.page) params.append('page', filters.page.toString());

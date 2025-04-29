@@ -7,11 +7,9 @@ import { Upload } from 'lucide-react';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { useWarrior } from '@/hooks/useWarrior';
-import type { WarriorSpecialty } from '@/lib/database.types';
 
 interface RegisterWarriorForm {
   name: string;
-  specialty: WarriorSpecialty;
   bio?: string;
   socialLinks: {
     github?: string;
@@ -31,7 +29,6 @@ export default function RegisterWarriorPage() {
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [formData, setFormData] = useState<RegisterWarriorForm>({
     name: '',
-    specialty: 'MIXED',
     socialLinks: {
       github: '',
       twitter: '',
@@ -92,7 +89,6 @@ export default function RegisterWarriorPage() {
       // Create warrior
       const warrior = await createWarrior({
         name: formData.name,
-        specialty: formData.specialty,
         bio: formData.bio,
         socialLinks: formData.socialLinks
       });
@@ -185,24 +181,6 @@ export default function RegisterWarriorPage() {
               className="w-full bg-slate-800/50 border border-purple-500/20 rounded-lg py-2 px-4 text-slate-200 focus:outline-none focus:border-purple-500/50"
               placeholder="Enter your warrior name"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">
-              Specialty *
-            </label>
-            <select
-              name="specialty"
-              value={formData.specialty}
-              onChange={handleInputChange}
-              required
-              className="w-full bg-slate-800/50 border border-purple-500/20 rounded-lg py-2 px-4 text-slate-200 focus:outline-none focus:border-purple-500/50"
-            >
-              <option value="STRIKER">Striker</option>
-              <option value="GRAPPLER">Grappler</option>
-              <option value="WEAPONS_MASTER">Weapons Master</option>
-              <option value="MIXED">Mixed</option>
-            </select>
           </div>
 
           <div>

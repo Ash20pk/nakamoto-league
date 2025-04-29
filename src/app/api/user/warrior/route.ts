@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
       .select(`
         id,
         name,
-        specialty,
         avatar_url,
         bio,
         rank,

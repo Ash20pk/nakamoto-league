@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/database.types';
 import { useAuth } from '@/providers/AuthProvider';
-import type { WarriorSpecialty } from '@/lib/database.types';
 
 // Define the warrior stats interface
 export interface WarriorStats {
@@ -19,7 +18,6 @@ export interface WarriorStats {
   energy?: number;
   energy_last_updated?: string;
   last_check_in?: string;
-  specialty: WarriorSpecialty;
   dojo_id: string | null;
   owner_id: string;
   created_at: string;
@@ -96,7 +94,7 @@ export function WarriorStatsProvider({ children, initialWarriorId }: WarriorStat
       
       const { data, error: fetchError } = await supabase
         .from('warriors')
-        .select('id, name, avatar_url, power_level, rank, win_rate, specialty')
+        .select('id, name, avatar_url, power_level, rank, win_rate')
         .order('rank', { ascending: true })
         .limit(limit);
       

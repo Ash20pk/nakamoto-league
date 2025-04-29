@@ -65,7 +65,6 @@ interface Warrior {
   name: string;
   power_level: number;  // Competitive rating (like chess ELO) - used for ranking
   rank: number;         // Position in the global leaderboard based on power_level
-  specialty: string;
   avatar_url: string | null;
   win_rate: number;     // Percentage of battles won
   experience?: number;  // Gamification XP earned from all platform activities
@@ -583,9 +582,6 @@ const WarriorProfile = () => {
                 {warrior.name}
               </h1>
               <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 mb-2">
-                <span className="bg-purple-900/30 text-purple-400 border border-purple-500/20 rounded-full px-2 py-0.5 text-xs">
-                  {warrior.specialty.replace('_', ' ')}
-                </span>
                 {warrior.dojo && (
                   <Link 
                     href={`/dojos/${warrior.dojo.id}`}
@@ -594,6 +590,43 @@ const WarriorProfile = () => {
                     <Shield className="w-3 h-3 mr-1" />
                     {warrior.dojo.name}
                   </Link>
+                )}
+                
+                {/* Social Links */}
+                {warrior.metadata?.socialLinks?.github && (
+                  <a 
+                    href={warrior.metadata.socialLinks.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-gray-900/30 text-gray-300 hover:text-purple border border-gray-500/20 rounded-full px-2 py-0.5 text-xs flex items-center transition-colors"
+                  >
+                    <Github className="w-3 h-3 mr-1" />
+                    GitHub
+                  </a>
+                )}
+                
+                {warrior.metadata?.socialLinks?.twitter && (
+                  <a 
+                    href={warrior.metadata.socialLinks.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-gray-900/30 text-gray-300 hover:text-cyan border border-gray-500/20 rounded-full px-2 py-0.5 text-xs flex items-center transition-colors"
+                  >
+                    <Twitter className="w-3 h-3 mr-1" />
+                    Twitter
+                  </a>
+                )}
+                
+                {warrior.metadata?.socialLinks?.website && (
+                  <a 
+                    href={warrior.metadata.socialLinks.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-gray-900/30 text-gray-300 hover:text-red border border-gray-500/20 rounded-full px-2 py-0.5 text-xs flex items-center transition-colors"
+                  >
+                    <Globe className="w-3 h-3 mr-1" />
+                    Website
+                  </a>
                 )}
               </div>
               <p className="text-gray-400 text-sm">
@@ -686,7 +719,7 @@ const WarriorProfile = () => {
                 <div className="bg-slate-900/50 p-4 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <Sword className="w-5 h-5 text-red" />
-                    <span className="text-gray-400 text-sm">Power</span>
+                    <span className="text-gray-400 text-sm">Power Rating</span>
                   </div>
                   <p className="text-2xl font-bold text-red">{warrior.power_level}</p>
                 </div>
@@ -757,50 +790,6 @@ const WarriorProfile = () => {
                   <Sword className="w-4 h-4 mr-2" />
                   Challenge to Battle
                 </button>
-              </div>
-            )}
-            
-            {/* Social Links */}
-            {warrior.metadata?.socialLinks && (
-              <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Connect</h2>
-                <div className="space-y-3">
-                  {warrior.metadata.socialLinks.github && (
-                    <a 
-                      href={warrior.metadata.socialLinks.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center text-gray-300 hover:text-purple transition-colors"
-                    >
-                      <Github className="w-5 h-5 mr-3" />
-                      <span>GitHub</span>
-                    </a>
-                  )}
-                  
-                  {warrior.metadata.socialLinks.twitter && (
-                    <a 
-                      href={warrior.metadata.socialLinks.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center text-gray-300 hover:text-cyan transition-colors"
-                    >
-                      <Twitter className="w-5 h-5 mr-3" />
-                      <span>Twitter</span>
-                    </a>
-                  )}
-                  
-                  {warrior.metadata.socialLinks.website && (
-                    <a 
-                      href={warrior.metadata.socialLinks.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center text-gray-300 hover:text-red transition-colors"
-                    >
-                      <Globe className="w-5 h-5 mr-3" />
-                      <span>Website</span>
-                    </a>
-                  )}
-                </div>
               </div>
             )}
             
@@ -899,13 +888,7 @@ const WarriorProfile = () => {
                     </div>
                   ) : (
                     <p className="text-gray-300 mb-4">
-                      {warrior.metadata?.bio || `${warrior.name} is a skilled warrior specializing in ${warrior.specialty.replace('_', ' ')} techniques. With a power level of ${warrior.power_level} ${warrior.rank === 0 ? 'and currently Unranked' : `and a rank of #${warrior.rank}`}, they are a formidable opponent in the Nakamoto League.`}
-                    </p>
-                  )}
-                  
-                  {!isEditMode && warrior.dojo && (
-                    <p className="text-gray-300">
-                      Currently training with the <Link href={`/dojos/${warrior.dojo.id}`} className="text-cyan hover:text-cyan-light transition-colors">{warrior.dojo.name}</Link> dojo based in {warrior.dojo.location}.
+                      {warrior.metadata?.bio || `${warrior.name} is a skilled warrior. With a power level of ${warrior.power_level} ${warrior.rank === 0 ? 'and currently Unranked' : `and a rank of #${warrior.rank}`}, they are a formidable opponent in the Nakamoto League.`}
                     </p>
                   )}
                   
