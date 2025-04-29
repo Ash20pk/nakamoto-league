@@ -39,7 +39,7 @@ export function useDojo() {
         .from('dojos')
         .select(`
           *,
-          warriors:warriors(count)
+          warriors:warriors(id, power_level, win_rate)
         `, { count: 'exact' });
 
       // Apply search filter
@@ -65,23 +65,37 @@ export function useDojo() {
 
       // Transform data to match our Dojo interface
       const transformedData: Dojo[] = data?.map((dojo: any, index: number) => {
-        // Calculate a deterministic power level based on dojo id
-        // This ensures the same dojo always has the same power level
-        const dojoIdSum = dojo.id.split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0);
-        const powerLevel = 1500 + (dojoIdSum % 1000);
+        // Calculate actual power level and win rate based on warriors
+        const warriors = dojo.warriors || [];
+        const totalWarriors = warriors.length;
         
-        // Calculate a deterministic win rate based on dojo id
-        const winRate = 50 + (dojoIdSum % 50);
+        // Calculate total power level (sum of all warriors' power levels)
+        let totalPowerLevel = 0;
+        let totalWinRate = 0;
+        
+        warriors.forEach((warrior: any) => {
+          totalPowerLevel += warrior.power_level || 0;
+          totalWinRate += warrior.win_rate || 0;
+        });
+        
+        // Calculate average win rate
+        const winRate = totalWarriors > 0 
+          ? Math.round(totalWinRate / totalWarriors) 
+          : 0;
+        
+        // Get specialization from metadata if available
+        const metadata = dojo.metadata || {};
+        const specialization = metadata.specialization || 'Mixed';
         
         return {
           id: dojo.id,
           name: dojo.name,
           location: dojo.location || 'Unknown Location',
           rank: index + 1 + (filters.page - 1) * filters.limit, // Calculate rank based on pagination
-          powerLevel,
-          totalWarriors: dojo.warriors?.[0]?.count || 0,
+          powerLevel: totalPowerLevel,
+          totalWarriors,
           winRate,
-          specialization: dojo.description?.split(' ')[0] || 'Mixed',
+          specialization,
           banner: dojo.banner_url || '/images/default-dojo.jpg'
         };
       }) || [];
