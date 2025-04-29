@@ -10,6 +10,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const warriorId = params.id;
     const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check if user is authenticated
@@ -24,7 +25,7 @@ export async function POST(
     const { data: warrior, error: warriorError } = await supabase
       .from('warriors')
       .select('owner_id')
-      .eq('id', params.id)
+      .eq('id', warriorId)
       .single();
       
     if (warriorError) {
@@ -64,7 +65,7 @@ export async function POST(
     const { data: updatedWarrior, error: updateError } = await supabase
       .from('warriors')
       .update({ dojo_id: dojoId })
-      .eq('id', params.id)
+      .eq('id', warriorId)
       .select()
       .single();
     
@@ -87,6 +88,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const warriorId = params.id;
     const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check if user is authenticated
@@ -101,7 +103,7 @@ export async function DELETE(
     const { data: warrior, error: warriorError } = await supabase
       .from('warriors')
       .select('owner_id, dojo_id')
-      .eq('id', params.id)
+      .eq('id', warriorId)
       .single();
       
     if (warriorError) {
@@ -123,7 +125,7 @@ export async function DELETE(
     const { data: updatedWarrior, error: updateError } = await supabase
       .from('warriors')
       .update({ dojo_id: null })
-      .eq('id', params.id)
+      .eq('id', warriorId)
       .select()
       .single();
     

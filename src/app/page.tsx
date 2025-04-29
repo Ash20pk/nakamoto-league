@@ -26,6 +26,7 @@ import { useTournament, type Tournament } from '@/hooks/useTournament';
 import { useDojo, type Dojo } from '@/hooks/useDojo';
 import { useWarrior } from '@/hooks/useWarrior';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/providers/AuthProvider';
 
 // Define interfaces for the UI components that match the expected format
 interface UITournament {
@@ -76,6 +77,7 @@ export default function Home() {
   const [glitchEffect, setGlitchEffect] = useState(false);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
+  const { authState } = useAuth();
 
   // Use hooks to fetch data
   const { tournaments: apiTournaments, loadingTournaments, fetchTournaments } = useTournament();
@@ -343,34 +345,55 @@ export default function Home() {
               <div className={`lg:w-1/2 lg:pl-8 transform transition-all duration-700 ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`} style={{ transitionDelay: '0.2s' }}>
                 <div className="bg-gray-900/60 backdrop-blur-sm rounded-lg p-4 border border-gray-800">
                   <h3 className="text-lg font-medium mb-3 text-white">Your Warrior Status</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-2 text-sm text-gray-400">
-                    <div className="flex items-center">
-                      <p className="text-gray-400 text-xs mb-1">Rank</p>
-                      <p className="text-2xl font-bold text-cyan-400">#42</p>
-                    </div>
-                    <div className="flex items-center">
-                      <p className="text-gray-400 text-xs mb-1">Victories</p>
-                      <p className="text-2xl font-bold text-red-400">3</p>
-                    </div>
-                    <div className="flex items-center">
-                      <p className="text-gray-400 text-xs mb-1">Active Battles</p>
-                      <p className="text-2xl font-bold text-purple-400">1</p>
-                    </div>
-                    <div className="flex items-center">
-                      <p className="text-gray-400 text-xs mb-1">Dojo</p>
-                      <p className="text-sm font-bold text-white truncate">Tokyo Blockchain</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Link href="/profile" className="neon-button-red-sm px-3 py-1.5 text-white text-sm font-medium flex items-center">
-                      <Award className="w-3.5 h-3.5 mr-1" />
-                      Profile
-                    </Link>
-                    <Link href="/tournaments/browse" className="neon-button-cyan-sm px-3 py-1.5 text-white text-sm font-medium flex items-center">
-                      <Trophy className="w-3.5 h-3.5 mr-1" />
-                      Join Tournament
-                    </Link>
-                  </div>
+                  
+                  {authState.isAuthenticated && authState.warrior ? (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <p className="text-gray-400 text-xs mb-1">Rank</p>
+                          <p className="text-2xl font-bold text-cyan-400">#{authState.warrior.rank || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 text-xs mb-1">Power Level</p>
+                          <p className="text-2xl font-bold text-red-400">{authState.warrior.power_level}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 text-xs mb-1">Win Rate</p>
+                          <p className="text-2xl font-bold text-purple-400">{authState.warrior.win_rate}%</p>
+                        </div>
+                        <div className="sm:col-span-3">
+                          <p className="text-gray-400 text-xs mb-1">Dojo</p>
+                          <p className="text-sm text-white truncate">
+                            {authState.warrior.dojo_id ? 'Member of a Dojo' : 'Independent Warrior'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Link href={`/warriors/${authState.warrior.id}`} className="neon-button-red-sm py-1.5 text-white text-sm font-medium flex items-center">
+                          <User className="w-3.5 h-3.5 mr-1" />
+                          My Profile
+                        </Link>
+                        <Link href="/dashboard" className="neon-button-cyan-sm px-3 py-1.5 text-white text-sm font-medium flex items-center">
+                          <BarChart className="w-3.5 h-3.5 mr-1" />
+                          Dashboard
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-gray-400 mb-4">Join the Nakamoto League to track your progress, compete in tournaments, and join elite tech dojos.</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Link href="/login" className="neon-button-red-sm px-3 py-1.5 text-white text-sm font-medium flex items-center">
+                          <User className="w-3.5 h-3.5 mr-1" />
+                          Sign In
+                        </Link>
+                        <Link href="/register" className="neon-button-cyan-sm px-3 py-1.5 text-white text-sm font-medium flex items-center">
+                          <ArrowRight className="w-3.5 h-3.5 mr-1" />
+                          Register
+                        </Link>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

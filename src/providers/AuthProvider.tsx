@@ -173,6 +173,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         onboardingStep = 'complete';
       }
 
+      // If a warrior is trying to access a dojo page, or vice versa, they should be considered onboarded
+      // This allows warriors to view dojo pages without going through dojo onboarding
+      if ((accountType === 'warrior' && warrior) || (accountType === 'dojo' && dojo)) {
+        onboardingStep = 'complete';
+      }
+
       setAuthState({
         user,
         profile,

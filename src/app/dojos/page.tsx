@@ -24,6 +24,9 @@ const DojosPage = () => {
     page: 1,
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [joiningDojo, setJoiningDojo] = useState<string | null>(null);
+  const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDojos(filters);
@@ -44,6 +47,50 @@ const DojosPage = () => {
 
   const handleLoadMore = () => {
     setFilters(prev => ({ ...prev, page: prev.page + 1 }));
+  };
+
+  // Join dojo function
+  const joinDojo = async (dojoId: string) => {
+    if (!authState.warrior) {
+      router.push('/dashboard/warriors/register');
+      return;
+    }
+    
+    try {
+      setJoiningDojo(dojoId);
+      setJoinError(null);
+      
+      const response = await fetch(`/api/warriors/${authState.warrior.id}/dojo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ dojoId }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to join dojo');
+      }
+      
+      // Update local state
+      if (authState.warrior) {
+        authState.warrior.dojo_id = dojoId;
+      }
+      
+      setJoinSuccess(dojoId);
+      
+      // Reset success message after 3 seconds
+      setTimeout(() => {
+        setJoinSuccess(null);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error joining dojo:', error);
+      setJoinError(error instanceof Error ? error.message : 'Failed to join dojo');
+    } finally {
+      setJoiningDojo(null);
+    }
   };
 
   const PowerLevelBar: React.FC<{ level: number }> = ({ level }) => {
@@ -213,16 +260,39 @@ const DojosPage = () => {
                   </div>
                   
                   {canJoinDojo ? (
-                    <button
-                      onClick={() => router.push(`/dojos/${dojo.id}/join`)}
-                      className="w-full py-2 neon-button-red rounded-lg text-white"
-                    >
-                      Join Dojo
-                    </button>
+                    <>
+                      {authState.warrior?.dojo_id === dojo.id ? (
+                        <div className="w-full py-2 bg-green-900/30 border border-green-500/20 rounded-lg text-green-400 text-sm text-center">
+                          Member of this dojo
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => joinDojo(dojo.id)}
+                          disabled={joiningDojo === dojo.id}
+                          className="w-full py-2 neon-button-red rounded-lg text-white"
+                        >
+                          {joiningDojo === dojo.id ? (
+                            <span className="animate-pulse">Joining...</span>
+                          ) : (
+                            "Join Dojo"
+                          )}
+                        </button>
+                      )}
+                      {joinSuccess === dojo.id && (
+                        <div className="mt-2 text-green-400 text-xs text-center animate-fade-in">
+                          Successfully joined dojo!
+                        </div>
+                      )}
+                      {joinError && joiningDojo === dojo.id && (
+                        <div className="mt-2 text-red-400 text-xs text-center">
+                          {joinError}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <button
                       onClick={() => router.push(`/dojos/${dojo.id}`)}
-                      className="w-full py-2 bg-slate-800/70 border border-purple-500/20 rounded-lg hover:bg-slate-800/90 text-slate-300 transition-colors"
+                      className="w-full py-2 bg-slate-800/70 border border-purple-500/20 rounded-lg hover:bg-slate-800/90 text-slate-300"
                     >
                       View Dojo
                     </button>
