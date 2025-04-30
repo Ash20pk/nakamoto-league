@@ -1,6 +1,7 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { adminMiddleware } from './src/middleware/adminMiddleware';
 
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -9,10 +10,16 @@ const PUBLIC_ROUTES = [
   '/auth/register',
   '/tournaments',
   '/dojos',
-  '/warriors'
+  '/warriors',
+  '/admin/login'
 ];
 
 export async function middleware(req: NextRequest) {
+  // First, check for admin routes
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    return adminMiddleware(req);
+  }
+  
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
