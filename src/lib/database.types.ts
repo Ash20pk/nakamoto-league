@@ -7,7 +7,6 @@ export type Json =
   | Json[]
 
 export type TournamentFormat = 'SINGLE_ELIMINATION' | 'DOUBLE_ELIMINATION' | 'ROUND_ROBIN' | 'SWISS'
-export type BattleStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
 
 export interface Database {
   public: {
@@ -36,47 +35,6 @@ export interface Database {
           description?: string | null
           achieved_at?: string
           metadata?: Json | null
-        }
-      }
-      battles: {
-        Row: {
-          id: string
-          tournament_id: string | null
-          challenger_id: string
-          defender_id: string
-          status: BattleStatus
-          winner_id: string | null
-          battle_data: Json | null
-          scheduled_for: string | null
-          completed_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          tournament_id?: string | null
-          challenger_id: string
-          defender_id: string
-          status?: BattleStatus
-          winner_id?: string | null
-          battle_data?: Json | null
-          scheduled_for?: string | null
-          completed_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          tournament_id?: string | null
-          challenger_id?: string
-          defender_id?: string
-          status?: BattleStatus
-          winner_id?: string | null
-          battle_data?: Json | null
-          scheduled_for?: string | null
-          completed_at?: string | null
-          created_at?: string
-          updated_at?: string
         }
       }
       dojos: {
@@ -309,7 +267,6 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      battle_status: BattleStatus
       tournament_format: TournamentFormat
     }
   }

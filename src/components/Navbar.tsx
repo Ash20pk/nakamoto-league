@@ -154,14 +154,6 @@ const Navbar = ({ activeSection }: NavbarProps) => {
                   </span>
                 </button>
 
-                <Link
-                  href="/"
-                  className="hidden md:flex items-center gap-2 neon-button-red px-4 py-2 text-white font-medium transition-all"
-                >
-                  <span>Create Battle</span>
-                  <Sword className="w-4 h-4" />
-                </Link>
-
                 <div className="relative">
                   <button 
                     id="dropdown-button"
@@ -251,18 +243,6 @@ const Navbar = ({ activeSection }: NavbarProps) => {
                 <Zap className="w-4 h-4 text-red" />
               </Link>
             </div>
-            
-            {authState.user && (
-              <div className="mt-6">
-                <Link 
-                  href="/"
-                  className="block w-full neon-button-red py-2 text-center text-white"
-                  // onClick={() => setMobileMenuOpen(false)}
-                >
-                  Create Battle
-                </Link>
-              </div>
-            )}
           </div>
         </div>
       )}

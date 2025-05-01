@@ -4,12 +4,10 @@ export interface Permissions {
   // Creation permissions
   canCreateTournament: boolean;
   canCreateDojo: boolean;
-  canCreateBattle: boolean;
   
   // Join permissions
   canJoinTournament: boolean;
   canJoinDojo: boolean;
-  canJoinBattle: boolean;
   
   // Account type
   isWarrior: boolean;
@@ -28,10 +26,8 @@ export function usePermissions(): Permissions {
     return {
       canCreateTournament: false,
       canCreateDojo: false,
-      canCreateBattle: false,
       canJoinTournament: false,
       canJoinDojo: false,
-      canJoinBattle: false,
       isWarrior: false,
       isDojo: false,
       isAuthenticated: authState.isAuthenticated,
@@ -44,17 +40,13 @@ export function usePermissions(): Permissions {
   const isDojo = authState.accountType === 'dojo';
   
   return {
-    // Only dojos can create tournaments, dojos, and battles
+    // Only dojos can create tournaments and dojos
     canCreateTournament: isDojo,
     canCreateDojo: isDojo,
-    canCreateBattle: isDojo,
-    
-    // Warriors can join tournaments, dojos, and battles
+    // Warriors can join tournaments and dojos
     // Dojos can also join tournaments (for their warriors)
     canJoinTournament: isWarrior || isDojo,
     canJoinDojo: isWarrior,
-    canJoinBattle: isWarrior,
-    
     isWarrior,
     isDojo,
     isAuthenticated: authState.isAuthenticated,

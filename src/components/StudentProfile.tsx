@@ -46,7 +46,7 @@ const StudentProfile = ({ student }: StudentProfileProps) => {
           </div>
           <div className="text-center p-2 bg-slate-800/50 rounded-lg border border-purple-500/10">
             <Zap className="w-5 h-5 mx-auto text-blue-400 mb-1" />
-            <p className="text-sm text-slate-400">Battles</p>
+            <p className="text-sm text-slate-400">Events</p>
             <p className="font-bold text-blue-400">{student.hackathonsAttended}</p>
           </div>
           <div className="text-center p-2 bg-slate-800/50 rounded-lg border border-purple-500/10">

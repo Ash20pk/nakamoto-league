@@ -66,7 +66,7 @@ interface Warrior {
   power_level: number;  // Competitive rating (like chess ELO) - used for ranking
   rank: number;         // Position in the global leaderboard based on power_level
   avatar_url: string | null;
-  win_rate: number;     // Percentage of battles won
+  win_rate: number;     // Percentage of battles won (now deprecated, but kept for compatibility)
   experience?: number;  // Gamification XP earned from all platform activities
   level?: number;       // Progression tier based on experience points
   energy?: number;      // Spendable resource that regenerates over time
@@ -80,40 +80,15 @@ interface Warrior {
   dojo: {
     id: string;
     name: string;
-    location: string;
     banner_url: string | null;
-  } | null;
-  metadata: {
-    bio?: string;
-    socialLinks?: {
-      github?: string;
-      twitter?: string;
-      website?: string;
-    }
-  };
-  stats: {
-    battlesWon: number;
-    battlesParticipated: number;
-    tournaments: Array<{
-      id: string;
-      title: string;
-      start_date: string;
-      end_date: string;
-    }>;
   };
 }
 
-interface Battle {
+interface Tournament {
   id: string;
-  status: string;
-  created_at: string;
-  completed_at: string | null;
-  opponent: {
-    id: string;
-    name: string;
-    avatar_url: string | null;
-  };
-  isWinner: boolean;
+  title: string;
+  start_date: string;
+  end_date: string;
 }
 
 const WarriorProfile = () => {
@@ -123,10 +98,10 @@ const WarriorProfile = () => {
   const supabase = createClientComponentClient<Database>();
   
   const [warrior, setWarrior] = useState<Warrior | null>(null);
-  const [recentBattles, setRecentBattles] = useState<Battle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'battles' | 'tournaments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tournaments'>('overview');
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -137,13 +112,6 @@ const WarriorProfile = () => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   
-  // Use win_rate directly from the database instead of calculating it
-  // This ensures consistency with the rest of the application
-  const winRate = warrior?.win_rate || 0;
-
-  // Check if current user is the owner of this warrior profile
-  const isOwner = authState.warrior?.id === warrior?.id;
-
   useEffect(() => {
     async function fetchWarriorData() {
       try {
@@ -158,27 +126,15 @@ const WarriorProfile = () => {
           .select(`
             *,
             owner:profiles (username, avatar_url),
-            dojo:dojos (id, name, location, banner_url)
+            dojo:dojos (id, name, banner_url)
           `)
           .eq('id', warriorId)
           .single();
         
         if (warriorError) throw warriorError;
         
-        // Fetch stats - we still need these for the UI but we'll use win_rate for the percentage
-        const { data: battlesWon, error: battlesWonError } = await supabase
-          .from('battles')
-          .select('id', { count: 'exact' })
-          .eq('winner_id', warriorId);
-          
-        // Get battles participated
-        const { data: battlesParticipated, error: battlesParticipatedError } = await supabase
-          .from('battles')
-          .select('id', { count: 'exact' })
-          .or(`challenger_id.eq.${warriorId},defender_id.eq.${warriorId}`);
-        
-        // Get tournament participation
-        const { data: tournaments, error: tournamentsError } = await supabase
+        // Fetch tournaments
+        const { data: tournamentsData, error: tournamentsError } = await supabase
           .from('tournament_participants')
           .select(`
             tournament:tournaments (
@@ -190,80 +146,13 @@ const WarriorProfile = () => {
           `)
           .eq('warrior_id', warriorId);
         
-        // Get recent battles
-        const { data: battleData, error: battleError } = await supabase
-          .from('battles')
-          .select(`
-            id, 
-            status, 
-            created_at, 
-            completed_at,
-            winner_id,
-            challenger_id,
-            defender_id,
-            challenger:warriors!challenger_id (id, name, avatar_url),
-            defender:warriors!defender_id (id, name, avatar_url)
-          `)
-          .or(`challenger_id.eq.${warriorId},defender_id.eq.${warriorId}`)
-          .order('created_at', { ascending: false })
-          .limit(5);
-        
-        if (battleError) throw battleError;
-        
-        // Transform battle data to include opponent info
-        const transformedBattles: Battle[] = battleData.map(battle => {
-          const isChallenger = battle.challenger_id === warriorId;
-          
-          // Extract challenger and defender data correctly - they come as arrays with a single object
-          const challenger = Array.isArray(battle.challenger) && battle.challenger.length > 0 
-            ? battle.challenger[0] 
-            : { id: '', name: 'Unknown', avatar_url: null };
-            
-          const defender = Array.isArray(battle.defender) && battle.defender.length > 0 
-            ? battle.defender[0] 
-            : { id: '', name: 'Unknown', avatar_url: null };
-          
-          // Get the opponent based on whether the warrior is the challenger or defender
-          const opponentData = isChallenger ? defender : challenger;
-          const isWinner = battle.winner_id === warriorId;
-          
-          return {
-            id: battle.id,
-            status: battle.status,
-            created_at: battle.created_at,
-            completed_at: battle.completed_at,
-            opponent: {
-              id: opponentData.id || '',
-              name: opponentData.name || 'Unknown',
-              avatar_url: opponentData.avatar_url || null
-            },
-            isWinner
-          };
-        });
+        if (tournamentsError) throw tournamentsError;
         
         // Process and set the warrior data
         if (warriorData) {
-          // Combine all the data
-          const processedWarrior: Warrior = {
-            ...warriorData,
-            stats: {
-              battlesWon: battlesWon?.length || 0,
-              battlesParticipated: battlesParticipated?.length || 0,
-              tournaments: tournaments?.map(t => t.tournament) || []
-            }
-          };
-          
-          // Set the warrior data
-          setWarrior(processedWarrior);
-          
-          // Initialize edit form with current values
-          if (processedWarrior.metadata) {
-            setEditBio(processedWarrior.metadata.bio || '');
-            setEditSocials(processedWarrior.metadata.socialLinks || {});
-          }
+          setWarrior(warriorData);
+          setTournaments(tournamentsData.map(t => t.tournament));
         }
-        
-        setRecentBattles(transformedBattles);
       } catch (err) {
         console.error('Error fetching warrior data:', err);
         setError('Failed to load warrior profile');
@@ -296,7 +185,7 @@ const WarriorProfile = () => {
   const uploadAvatar = async (file: File, warriorId: string): Promise<string | null> => {
     try {
       // Make sure we're only allowing the owner to upload
-      if (!isOwner || !authState.user) {
+      if (!authState.warrior?.id || authState.warrior.id !== warrior.id) {
         console.error('Unauthorized: Only the owner can upload an avatar');
         throw new Error('Unauthorized: Only the owner can upload an avatar');
       }
@@ -380,7 +269,7 @@ const WarriorProfile = () => {
   
   // Function to save profile changes
   const saveProfileChanges = async () => {
-    if (!warrior || !isOwner) return;
+    if (!warrior || !authState.warrior?.id || authState.warrior.id !== warrior.id) return;
     
     setUpdateLoading(true);
     try {
@@ -513,7 +402,6 @@ const WarriorProfile = () => {
       </>
     );
   }
-  console.log(warrior); 
 
   return (
     <>
@@ -634,7 +522,7 @@ const WarriorProfile = () => {
               </p>
               
               {/* Edit Profile Button (only shown to owner) */}
-              {isOwner && !isEditMode && (
+              {authState.warrior?.id === warrior.id && !isEditMode && (
                 <button 
                   onClick={enterEditMode}
                   className="mt-2 flex items-center justify-center mx-auto md:mx-0 bg-purple-900/30 text-purple-400 border border-purple-500/20 rounded-full px-3 py-1 text-xs hover:bg-purple-900/50 transition-colors"
@@ -645,7 +533,7 @@ const WarriorProfile = () => {
               )}
               
               {/* Edit Mode Controls */}
-              {isOwner && isEditMode && (
+              {authState.warrior?.id === warrior.id && isEditMode && (
                 <div className="flex items-center justify-center md:justify-start space-x-2 mt-2">
                   <button 
                     onClick={saveProfileChanges}
@@ -729,15 +617,7 @@ const WarriorProfile = () => {
                     <Star className="w-5 h-5 text-purple" />
                     <span className="text-gray-400 text-sm">Win Rate</span>
                   </div>
-                  <p className="text-2xl font-bold text-purple">{winRate}%</p>
-                </div>
-                
-                <div className="bg-slate-900/50 p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sword className="w-5 h-5 text-cyan" />
-                    <span className="text-gray-400 text-sm">Battles</span>
-                  </div>
-                  <p className="text-2xl font-bold text-cyan">{warrior.stats.battlesParticipated}</p>
+                  <p className="text-2xl font-bold text-purple">{warrior.win_rate}%</p>
                 </div>
               </div>
               
@@ -778,20 +658,6 @@ const WarriorProfile = () => {
                 </div>
               </div>
             </div>
-            
-            {/* Actions */}
-            {authState.warrior?.id !== warrior.id && (
-              <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Actions</h2>
-                <button
-                  onClick={() => router.push(`/dashboard/battles/create?opponent=${warrior.id}`)}
-                  className="w-full neon-button-red py-2 text-white font-medium flex items-center justify-center"
-                >
-                  <Sword className="w-4 h-4 mr-2" />
-                  Challenge to Battle
-                </button>
-              </div>
-            )}
             
             {/* Dojo Info */}
             {warrior.dojo && (
@@ -845,16 +711,6 @@ const WarriorProfile = () => {
                   onClick={() => setActiveTab('overview')}
                 >
                   Overview
-                </button>
-                <button 
-                  className={`py-3 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === 'battles' 
-                      ? 'border-red text-red' 
-                      : 'border-transparent text-gray-400 hover:text-white'
-                  }`}
-                  onClick={() => setActiveTab('battles')}
-                >
-                  Recent Battles
                 </button>
                 <button 
                   className={`py-3 border-b-2 font-medium text-sm transition-colors ${
@@ -933,72 +789,6 @@ const WarriorProfile = () => {
                   )}
                 </div>
                 
-                {/* Recent Battles Preview */}
-                <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-white">Recent Battles</h2>
-                    <button 
-                      onClick={() => setActiveTab('battles')}
-                      className="text-cyan hover:text-cyan-light text-sm transition-colors"
-                    >
-                      View All
-                    </button>
-                  </div>
-                  
-                  {recentBattles.length === 0 ? (
-                    <p className="text-gray-400">No battles yet.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {recentBattles.slice(0, 3).map(battle => (
-                        <Link
-                          key={battle.id}
-                          href={`/battles/${battle.id}`}
-                          className="block bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 hover:bg-slate-800/70 transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-slate-700/50 mr-3">
-                                <Image 
-                                  src={battle.opponent.avatar_url || '/images/default-avatar.jpg'}
-                                  alt={battle.opponent.name}
-                                  fill
-                                  className="object-cover"
-                                  unoptimized
-                                />
-                              </div>
-                              <div>
-                                <p className="text-white font-medium">vs {battle.opponent.name}</p>
-                                <p className="text-gray-400 text-xs">
-                                  {formatDistanceToNow(new Date(battle.created_at), { addSuffix: true })}
-                                </p>
-                              </div>
-                            </div>
-                            <div>
-                              {battle.status === 'COMPLETED' ? (
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  battle.isWinner 
-                                    ? 'bg-green-900/30 text-green-400 border border-green-500/30' 
-                                    : 'bg-red-900/30 text-red-400 border border-red-500/30'
-                                }`}>
-                                  {battle.isWinner ? 'Victory' : 'Defeat'}
-                                </span>
-                              ) : (
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  battle.status === 'PENDING' 
-                                    ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-500/30' 
-                                    : 'bg-blue-900/30 text-blue-400 border border-blue-500/30'
-                                }`}>
-                                  {battle.status.replace('_', ' ')}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
                 {/* Tournaments Preview */}
                 <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-6">
                   <div className="flex justify-between items-center mb-4">
@@ -1011,11 +801,11 @@ const WarriorProfile = () => {
                     </button>
                   </div>
                   
-                  {warrior.stats.tournaments.length === 0 ? (
+                  {tournaments.length === 0 ? (
                     <p className="text-gray-400">No tournament participation yet.</p>
                   ) : (
                     <div className="space-y-4">
-                      {warrior.stats.tournaments.slice(0, 3).map(tournament => (
+                      {tournaments.slice(0, 3).map(tournament => (
                         <Link
                           key={tournament.id}
                           href={`/tournaments/${tournament.id}`}
@@ -1036,77 +826,15 @@ const WarriorProfile = () => {
               </>
             )}
             
-            {activeTab === 'battles' && (
-              <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Battle History</h2>
-                
-                {recentBattles.length === 0 ? (
-                  <p className="text-gray-400">No battles recorded yet.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {recentBattles.map(battle => (
-                      <Link
-                        key={battle.id}
-                        href={`/battles/${battle.id}`}
-                        className="block bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 hover:bg-slate-800/70 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-slate-700/50 mr-3">
-                              <Image 
-                                src={battle.opponent.avatar_url || '/images/default-avatar.jpg'}
-                                alt={battle.opponent.name}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                            <div>
-                              <p className="text-white font-medium">vs {battle.opponent.name}</p>
-                              <div className="flex items-center text-gray-400 text-xs">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                <span>{new Date(battle.created_at).toLocaleDateString()}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            {battle.status === 'COMPLETED' ? (
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                battle.isWinner 
-                                  ? 'bg-green-900/30 text-green-400 border border-green-500/30' 
-                                  : 'bg-red-900/30 text-red-400 border border-red-500/30'
-                              }`}>
-                                {battle.isWinner ? 'Victory' : 'Defeat'}
-                              </span>
-                            ) : (
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                battle.status === 'PENDING' 
-                                  ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-500/30' 
-                                  : 'bg-blue-900/30 text-blue-400 border border-blue-500/30'
-                              }`}>
-                                {battle.status.replace('_', ' ')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Pagination would go here if needed */}
-              </div>
-            )}
-            
             {activeTab === 'tournaments' && (
               <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-6">
                 <h2 className="text-xl font-bold text-white mb-4">Tournament History</h2>
                 
-                {warrior.stats.tournaments.length === 0 ? (
+                {tournaments.length === 0 ? (
                   <p className="text-gray-400">No tournament participation yet.</p>
                 ) : (
                   <div className="space-y-4">
-                    {warrior.stats.tournaments.map(tournament => (
+                    {tournaments.map(tournament => (
                       <Link
                         key={tournament.id}
                         href={`/tournaments/${tournament.id}`}

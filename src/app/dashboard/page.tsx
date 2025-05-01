@@ -30,21 +30,6 @@ interface Tournament {
   max_participants: number;
 }
 
-interface Battle {
-  id: string;
-  status: string;
-  challenger: {
-    name: string;
-    avatar_url: string | null;
-  };
-  defender: {
-    name: string;
-    avatar_url: string | null;
-  };
-  created_at: string;
-  metadata: any;
-}
-
 interface Dojo {
   id: string;
   name: string;
@@ -59,13 +44,11 @@ export default function Dashboard() {
   const supabase = createClientComponentClient<Database>();
   
   const [activeTournaments, setActiveTournaments] = useState<Tournament[]>([]);
-  const [recentBattles, setRecentBattles] = useState<Battle[]>([]);
   const [popularDojos, setPopularDojos] = useState<Dojo[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     activeTournaments: 0,
     activeWarriors: 0,
-    totalBattles: 0,
     totalDojos: 0
   });
   const [checkInLoading, setCheckInLoading] = useState(false);
@@ -371,55 +354,6 @@ export default function Dashboard() {
         
         setActiveTournaments(tournamentsWithCounts);
         
-        // Fetch recent battles
-        let query = supabase
-          .from('battles')
-          .select(`
-            id, status, created_at, metadata,
-            challenger:warriors!challenger_id (name, avatar_url),
-            defender:warriors!defender_id (name, avatar_url)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(5);
-          
-        // If user has a warrior, filter to show their battles
-        if (authState.warrior) {
-          query = query.or(`challenger_id.eq.${authState.warrior.id},defender_id.eq.${authState.warrior.id}`);
-        }
-        
-        const { data: battlesData, error: battlesError } = await query;
-        if (battlesError) throw battlesError;
-        
-        // Map the data to match the Battle interface
-        const formattedBattles: Battle[] = (battlesData || []).map(battle => {
-          // Extract challenger and defender data correctly
-          // They come as arrays with a single object, so we need to get the first element
-          const challenger = Array.isArray(battle.challenger) && battle.challenger.length > 0 
-            ? battle.challenger[0] 
-            : { name: 'Unknown', avatar_url: null };
-            
-          const defender = Array.isArray(battle.defender) && battle.defender.length > 0 
-            ? battle.defender[0] 
-            : { name: 'Unknown', avatar_url: null };
-            
-          return {
-            id: battle.id,
-            status: battle.status,
-            created_at: battle.created_at,
-            metadata: battle.metadata,
-            challenger: {
-              name: challenger.name || 'Unknown',
-              avatar_url: challenger.avatar_url || null
-            },
-            defender: {
-              name: defender.name || 'Unknown',
-              avatar_url: defender.avatar_url || null
-            }
-          };
-        });
-        
-        setRecentBattles(formattedBattles);
-        
         // Fetch popular dojos
         const { data: dojos, error: dojosError } = await supabase
           .from('dojos')
@@ -456,18 +390,16 @@ export default function Dashboard() {
         setPopularDojos(dojosWithCounts);
         
         // Fetch platform stats
-        const [{count: tournamentCount}, {count: warriorCount}, {count: battleCount}, {count: dojoCount}] = await Promise.all([
+        const [{count: tournamentCount}, {count: warriorCount}, {count: dojoCount}] = await Promise.all([
           supabase.from('tournaments').select('*', { count: 'exact', head: true })
             .gt('end_date', new Date().toISOString()),
           supabase.from('warriors').select('*', { count: 'exact', head: true }),
-          supabase.from('battles').select('*', { count: 'exact', head: true }),
           supabase.from('dojos').select('*', { count: 'exact', head: true })
         ]);
         
         setStats({
           activeTournaments: tournamentCount || 0,
           activeWarriors: warriorCount || 0,
-          totalBattles: battleCount || 0,
           totalDojos: dojoCount || 0
         });
         
@@ -479,7 +411,7 @@ export default function Dashboard() {
     }
     
     fetchDashboardData();
-  }, [supabase, authState.user, authState.warrior]);
+  }, [supabase, authState.user]);
 
   useEffect(() => {
     // Initialize profile data when auth state changes
@@ -661,102 +593,6 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-          
-          {/* Recent Battles */}
-          <div className="bg-gray-900/40 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden">
-            <div className="border-b border-gray-800 p-4 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-white">
-                <Sword className="inline-block mr-2 text-red" size={20} />
-                Recent Battles
-              </h2>
-              {authState.warrior && (
-                <Link href="/dashboard/battles" className="text-cyan hover:text-cyan-light text-sm transition-colors">
-                  My Battles
-                </Link>
-              )}
-            </div>
-            
-            <div className="p-4">
-              {recentBattles.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  No recent battles to display.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentBattles.map(battle => (
-                    <Link
-                      key={battle.id}
-                      href={`/battles/${battle.id}`}
-                      className="block bg-gray-800/30 hover:bg-gray-800/50 border border-gray-800 rounded-md p-4 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="flex items-center gap-2">
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-red/30">
-                              <Image 
-                                src={battle.challenger.avatar_url || '/images/default-avatar.jpg'} 
-                                alt={battle.challenger.name}
-                                width={40}
-                                height={40}
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                            <span className="text-white">{battle.challenger.name}</span>
-                          </div>
-                          
-                          <span className="mx-3 text-gray-500">vs</span>
-                          
-                          <div className="flex items-center gap-2">
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-cyan/30">
-                              <Image 
-                                src={battle.defender.avatar_url || '/images/default-avatar.jpg'} 
-                                alt={battle.defender.name}
-                                width={40}
-                                height={40}
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                            <span className="text-white">{battle.defender.name}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium 
-                            ${battle.status === 'PENDING' ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-500/30' :
-                              battle.status === 'IN_PROGRESS' ? 'bg-blue-900/30 text-blue-400 border border-blue-500/30' :
-                              battle.status === 'COMPLETED' ? 'bg-green-900/30 text-green-400 border border-green-500/30' :
-                              'bg-red-900/30 text-red-400 border border-red-500/30'}`}
-                          >
-                            {battle.status.replace('_', ' ')}
-                          </span>
-                          <span className="text-gray-400 text-sm hidden md:inline">
-                            {formatDate(battle.created_at)}
-                          </span>
-                          <Eye className="w-4 h-4 text-cyan" />
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-              
-              {!authState.warrior ? (
-                <div className="mt-6 text-center">
-                  <Link href="/dashboard/warriors/register" className="neon-button-red px-4 py-2 text-white font-medium">
-                    Create Your Warrior to Battle
-                  </Link>
-                </div>
-              ) : (
-                <div className="mt-6 text-center">
-                  <Link href="/dashboard/battles/create" className="neon-button-red px-4 py-2 text-white font-medium">
-                    Create New Battle
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
         
         {/* Sidebar (1/3 width on large screens) */}
@@ -773,10 +609,6 @@ export default function Dashboard() {
               <div className="bg-gray-800/50 p-3 rounded-md">
                 <h3 className="text-xs text-gray-400 mb-1">Active Warriors</h3>
                 <p className="text-2xl font-bold text-red">{stats.activeWarriors}</p>
-              </div>
-              <div className="bg-gray-800/50 p-3 rounded-md">
-                <h3 className="text-xs text-gray-400 mb-1">Total Battles</h3>
-                <p className="text-2xl font-bold text-purple">{stats.totalBattles}</p>
               </div>
               <div className="bg-gray-800/50 p-3 rounded-md">
                 <h3 className="text-xs text-gray-400 mb-1">Dojos</h3>
@@ -994,16 +826,6 @@ export default function Dashboard() {
                       </div>
                     </Link>
                   )}
-                  
-                  {canJoinBattle && (
-                    <Link href="/battles" className="action-card">
-                      <Sword size={24} className="text-red-500" />
-                      <div>
-                        <h3 className="text-white font-semibold">Join Battle</h3>
-                        <p className="text-gray-400 text-sm">Find battles to participate in</p>
-                      </div>
-                    </Link>
-                  )}
                 </>
               )}
               
@@ -1015,16 +837,6 @@ export default function Dashboard() {
                       <div>
                         <h3 className="text-white font-semibold">Create Tournament</h3>
                         <p className="text-gray-400 text-sm">Organize a new tournament</p>
-                      </div>
-                    </Link>
-                  )}
-                  
-                  {canCreateBattle && (
-                    <Link href="/battles/create" className="action-card">
-                      <Sword size={24} className="text-red-500" />
-                      <div>
-                        <h3 className="text-white font-semibold">Create Battle</h3>
-                        <p className="text-gray-400 text-sm">Challenge another dojo to battle</p>
                       </div>
                     </Link>
                   )}
@@ -1065,10 +877,6 @@ export default function Dashboard() {
               <Link href="/dojos" className="bg-gray-800/50 hover:bg-gray-800/80 p-3 rounded-lg flex flex-col items-center text-center transition-colors">
                 <Shield className="w-6 h-6 mb-2 text-blue-500" />
                 <span className="text-sm text-white">Dojos</span>
-              </Link>
-              <Link href="/dashboard/battles/create" className="bg-gray-800/50 hover:bg-gray-800/80 p-3 rounded-lg flex flex-col items-center text-center transition-colors">
-                <Zap className="w-6 h-6 mb-2 text-purple" />
-                <span className="text-sm text-white">New Battle</span>
               </Link>
             </div>
           </div>

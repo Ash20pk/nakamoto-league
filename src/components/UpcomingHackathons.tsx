@@ -18,7 +18,7 @@ const UpcomingHackathons = () => {
     },
     {
       id: 2,
-      title: 'NFT Battle Royale',
+      title: 'NFT Event',
       universities: ['Quantum Academy', 'Digital Nexus', 'Tech Titans'],
       date: '2024-04-22',
       location: 'Virtual Dojo',
@@ -27,7 +27,7 @@ const UpcomingHackathons = () => {
     },
     {
       id: 3,
-      title: 'DeFi Warriors Summit',
+      title: 'Blockchain Event',
       universities: ['Blockchain Institute', 'Crypto Academy', 'Genesis Hub'],
       date: '2024-05-01',
       location: 'Cyber Stadium',
@@ -37,32 +37,19 @@ const UpcomingHackathons = () => {
   ];
 
   return (
-    <div className="cyber-card rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 text-transparent bg-clip-text">
-          Upcoming Battles
-        </h2>
-        <Link href="/tournaments" className="text-purple-400 text-sm hover:text-purple-300">
-          View All
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="bg-slate-900/40 p-8 rounded-lg border border-purple-500/30">
+      <h2 className="text-2xl font-bold text-white mb-6">Upcoming Hackathons</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {hackathons.map((hackathon) => (
-          <div key={hackathon.id} className="rounded-lg overflow-hidden cyber-card border border-purple-500/20">
-            <div className="relative h-48 w-full">
-              <Image
-                src={hackathon.image}
-                alt={hackathon.title}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
-            </div>
+          <div key={hackathon.id} className="bg-slate-800/50 rounded-lg overflow-hidden border border-purple-500/20">
+            <Image
+              src={hackathon.image}
+              alt={hackathon.title}
+              className="w-full h-40 object-cover"
+              unoptimized
+            />
             <div className="p-4">
-              <h3 className="font-bold text-lg mb-2 text-slate-200">{hackathon.title}</h3>
-              
+              <h3 className="text-xl font-semibold text-white mb-2">{hackathon.title}</h3>
               <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2 text-sm text-slate-400">
                   <Calendar className="w-4 h-4 text-purple-400" />
@@ -74,7 +61,7 @@ const UpcomingHackathons = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-400">
                   <Users className="w-4 h-4 text-violet-400" />
-                  <span>{hackathon.participants} warriors</span>
+                  <span>{hackathon.participants} participants</span>
                 </div>
               </div>
 
@@ -93,7 +80,7 @@ const UpcomingHackathons = () => {
                 href={`/tournaments/${hackathon.id}`}
                 className="w-full cyber-gradient py-2 rounded pixel-corners text-white font-medium hover:opacity-90 transition-opacity block text-center"
               >
-                Join Battle
+                Join Event
               </Link>
             </div>
           </div>
