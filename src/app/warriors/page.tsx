@@ -7,6 +7,7 @@ import { Search, Filter, ChevronDown, Sword, Trophy, Star, Zap } from 'lucide-re
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { useWarrior } from '@/hooks/useWarrior';
+import BitcoinLoader from '@/components/BitcoinLoader';
 
 interface WarriorFilters {
   search?: string;
@@ -76,6 +77,10 @@ const WarriorsPage = () => {
   const handleWarriorClick = (warriorId: string) => {
     router.push(`/warriors/${warriorId}`);
   };
+
+  if (loadingWarriors && warriors.length === 0) {
+    return <BitcoinLoader />;
+  }
 
   return (
     <>
@@ -152,19 +157,10 @@ const WarriorsPage = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {loadingWarriors && warriors.length === 0 ? (
-            // Render loading skeletons
-            [...Array(8)].map((_, i) => (
-              <div key={i} className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden animate-pulse">
-                <div className="h-48 bg-slate-700/50"></div>
-                <div className="p-4 space-y-3">
-                  <div className="h-6 bg-slate-700/50 rounded w-3/4"></div>
-                  <div className="h-4 bg-slate-700/50 rounded w-1/2"></div>
-                  <div className="h-4 bg-slate-700/50 rounded w-2/3"></div>
-                  <div className="h-10 bg-slate-700/50 rounded"></div>
-                </div>
-              </div>
-            ))
+          {loadingWarriors && warriors.length > 0 ? (
+            <div className="flex justify-center items-center mt-8">
+              <BitcoinLoader />
+            </div>
           ) : warriors.length === 0 ? (
             <div className="col-span-full text-center py-10">
               <p className="text-slate-400 text-lg">No warriors found matching your criteria.</p>
@@ -224,7 +220,7 @@ const WarriorsPage = () => {
 
         {loadingWarriors && warriors.length > 0 ? (
           <div className="flex justify-center items-center mt-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+            <BitcoinLoader />
           </div>
         ) : warriors.length > 0 && warriors.length < warriorCount ? (
           <div className="flex justify-center mt-8">

@@ -7,6 +7,7 @@ import { Trophy, Users, MapPin, ExternalLink, Zap, Shield, Search, Filter, Chevr
 import { useAuth } from '@/providers/AuthProvider';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
+import BitcoinLoader from '@/components/BitcoinLoader';
 import { useDojo, type DojoFilters } from '@/hooks/useDojo';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -105,6 +106,10 @@ const DojosPage = () => {
     );
   };
 
+  if (loadingDojos && dojos.length === 0) {
+    return <BitcoinLoader />;
+  }
+
   return (
     <>
       <Navbar />
@@ -183,7 +188,7 @@ const DojosPage = () => {
 
         {/* Dojos Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {loadingDojos && dojos.length === 0 ? (
+          {loadingDojos && dojos.length > 0 ? (
             // Loading skeletons
             [...Array(6)].map((_, i) => (
               <div key={i} className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden animate-pulse">

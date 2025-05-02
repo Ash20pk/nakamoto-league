@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import Navbar from '@/components/Navbar';
+import BitcoinLoader from '@/components/BitcoinLoader';
 
 function LoginContent() {
   const router = useRouter();
@@ -67,11 +68,7 @@ function LoginContent() {
 
   // Show loading state while checking auth status
   if (authState.loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-cyan border-t-transparent shadow-neon-cyan"></div>
-      </div>
-    );
+    return <BitcoinLoader />;
   }
 
   return (
@@ -178,10 +175,7 @@ function LoginContent() {
                 className="w-full neon-button-cyan py-3 text-white font-medium transition-all hover:scale-[1.02] disabled:opacity-50 relative overflow-hidden group"
               >
                 {loading ? (
-                  <span className="flex items-center justify-center">
-                    <span className="animate-spin rounded-full h-5 w-5 border-2 border-t-transparent border-white mr-2" />
-                    Processing...
-                  </span>
+                  <BitcoinLoader />
                 ) : (
                   <span className="flex items-center justify-center">
                     Authenticate

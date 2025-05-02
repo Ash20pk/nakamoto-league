@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/providers/AuthProvider';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
+import BitcoinLoader from '@/components/BitcoinLoader';
 import { useTournament, type TournamentFilters } from '@/hooks/useTournament';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -57,6 +58,10 @@ const TournamentsPage = () => {
         return 'text-purple-400 bg-purple-900/30 border-purple-500/50';
     }
   };
+
+  if (loadingTournaments && tournaments.length === 0) {
+    return <BitcoinLoader />;
+  }
 
   return (
     <>
@@ -163,18 +168,7 @@ const TournamentsPage = () => {
         {/* Tournament Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {loadingTournaments && tournaments.length === 0 ? (
-            // Loading skeletons
-            [...Array(6)].map((_, i) => (
-              <div key={i} className="bg-slate-800/50 border border-purple-500/20 rounded-lg overflow-hidden animate-pulse">
-                <div className="h-48 bg-slate-700/50"></div>
-                <div className="p-4 space-y-3">
-                  <div className="h-6 bg-slate-700/50 rounded w-3/4"></div>
-                  <div className="h-4 bg-slate-700/50 rounded w-1/2"></div>
-                  <div className="h-4 bg-slate-700/50 rounded w-2/3"></div>
-                  <div className="h-10 bg-slate-700/50 rounded"></div>
-                </div>
-              </div>
-            ))
+            <BitcoinLoader />
           ) : tournaments.length === 0 ? (
             <div className="col-span-full text-center py-10">
               <p className="text-slate-400 text-lg">No tournaments found matching your criteria.</p>

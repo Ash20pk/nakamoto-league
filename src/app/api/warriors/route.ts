@@ -6,8 +6,8 @@ import type { Database } from '@/lib/database.types';
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Get search params for filtering
     const searchParams = req.nextUrl.searchParams;
@@ -62,8 +62,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check if user is authenticated
     const { data: { session }, error: authError } = await supabase.auth.getSession();

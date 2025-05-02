@@ -24,6 +24,7 @@ import {
 import { format } from 'date-fns';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import BitcoinLoader from '@/components/BitcoinLoader';
 import { useAuth } from '@/providers/AuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { Database } from '@/lib/database.types';
@@ -515,21 +516,7 @@ const TournamentPage = () => {
   };
 
   if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="container mx-auto px-4 py-8 mt-16">
-          <div className="animate-pulse">
-            <div className="h-64 bg-slate-800/50 rounded-lg mb-6"></div>
-            <div className="h-8 bg-slate-800/50 rounded w-1/3 mb-4"></div>
-            <div className="h-4 bg-slate-800/50 rounded w-1/2 mb-8"></div>
-            <div className="h-12 bg-slate-800/50 rounded mb-6"></div>
-            <div className="h-64 bg-slate-800/50 rounded-lg"></div>
-          </div>
-        </div>
-        <Footer />
-      </>
-    );
+    return <BitcoinLoader />;
   }
 
   if (error || !tournament) {
@@ -610,7 +597,7 @@ const TournamentPage = () => {
         <div className="flex flex-wrap gap-4 mb-8">
           {tournament.status === 'UPCOMING' && canJoinTournament && !isRegistered && (
             <button
-              onClick={handleRegister}
+              onClick={() => router.push(`/tournaments/register/${tournament.id}`)}
               className="px-6 py-3 neon-button-cyan rounded-lg text-white font-medium"
               disabled={new Date() > new Date(tournament.registrationDeadline)}
             >

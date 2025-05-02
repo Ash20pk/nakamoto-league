@@ -7,6 +7,7 @@ import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Navbar from '@/components/Navbar';
+import BitcoinLoader from '@/components/BitcoinLoader';
 import type { Database } from '@/lib/database.types';
 
 export default function RegisterPage() {
@@ -106,11 +107,7 @@ export default function RegisterPage() {
 
   // Show loading state while checking auth status
   if (authState.loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-cyan border-t-transparent shadow-neon-cyan"></div>
-      </div>
-    );
+    return <BitcoinLoader />;
   }
 
   return (
@@ -275,10 +272,7 @@ export default function RegisterPage() {
                 className={`w-full py-3 text-white font-medium transition-all hover:scale-[1.02] disabled:opacity-50 relative overflow-hidden group neon-button-red`}
               >
                 {loading ? (
-                  <span className="flex items-center justify-center">
-                    <span className="animate-spin rounded-full h-5 w-5 border-2 border-t-transparent border-white mr-2" />
-                    Processing...
-                  </span>
+                  <BitcoinLoader />
                 ) : (
                   <span className="flex items-center justify-center">
                     Register as Warrior

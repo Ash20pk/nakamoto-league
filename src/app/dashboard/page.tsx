@@ -9,6 +9,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/database.types';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import BitcoinLoader from '@/components/BitcoinLoader';
 import { usePermissions } from '@/hooks/usePermissions';
 
 // Import the AuthState type from AuthProvider
@@ -468,11 +469,7 @@ export default function Dashboard() {
 
   const renderContent = () => {
     if (loading) {
-      return (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-        </div>
-      );
+      return <BitcoinLoader />;
     }
     
     return (
@@ -675,10 +672,7 @@ export default function Dashboard() {
                   }`}
                 >
                   {checkInLoading ? (
-                    <>
-                      <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                      Processing...
-                    </>
+                    <BitcoinLoader />
                   ) : authState.warrior.last_check_in === new Date().toISOString().split('T')[0] ? (
                     <>
                       <Check size={16} className="text-green-400" />

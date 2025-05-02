@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import BitcoinLoader from '@/components/BitcoinLoader';
 import { useTournament, type Tournament } from '@/hooks/useTournament';
 import { useDojo, type Dojo } from '@/hooks/useDojo';
 import { useWarrior } from '@/hooks/useWarrior';
@@ -57,7 +58,7 @@ interface UIDojo {
 interface UIWarrior {
   id: string;
   name: string;
-  rank: number;
+  rank: number | string;
   dojo: string;
   victories: number;
   avatar: string;
@@ -112,29 +113,51 @@ export default function Home() {
   };
 
   const transformDojo = (dojo: Dojo): UIDojo => {
-    // Generate deterministic values based on the dojo ID
-    const idSum = dojo.id.split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0);
-    
+    // Count active tournaments for this dojo by checking if the dojo is the organizer
+    // This is a simple approach using available data without complex calculations
+    const activeTournaments = apiTournaments
+      .filter(tournament => 
+        (tournament.status === 'ONGOING' || tournament.status === 'UPCOMING') && 
+        tournament.organizer?.name === dojo.name
+      )
+      .length;
+
     return {
       id: dojo.id,
       name: dojo.name,
-      members: dojo.totalWarriors,
-      victories: 5 + (idSum % 10), // Deterministic victories based on ID
+      members: dojo.totalWarriors || 0,
+      // Use actual win rate data
+      victories: Math.round((dojo.winRate || 0) * 10),
       image: dojo.banner || '/images/default-dojo.jpg',
-      activeTournaments: 1 + (idSum % 3) // Deterministic active tournaments
+      // Use direct data: count tournaments where this dojo is the organizer
+      activeTournaments: activeTournaments
     };
   };
 
-  const transformWarrior = (warrior: any): UIWarrior => {
-    // Generate deterministic values based on the warrior ID
-    const idSum = warrior.id.split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0);
-    
+  const transformWarrior = (warrior: {
+    id: string;
+    name: string;
+    rank?: number | string;
+    win_rate?: number;
+    avatar_url?: string | null;
+    dojo_id?: string | null;
+    dojos?: {
+      id: string;
+      name: string;
+    } | null;
+  }): UIWarrior => {
+    // Use actual data from the warrior object
     return {
       id: warrior.id,
       name: warrior.name,
-      rank: warrior.rank || 999,
+      // Show "Unranked" for rank 0
+      rank: typeof warrior.rank === 'number' ? 
+        (warrior.rank === 0 ? 'Unranked' : warrior.rank) : 
+        'Unranked',
+      // The API returns dojos (not dojo) as the joined table name
       dojo: warrior.dojos?.name || 'Independent',
-      victories: 3 + (idSum % 8), // Deterministic victories based on ID
+      // Use actual win rate data
+      victories: Math.round((warrior.win_rate || 0) * 10),
       avatar: warrior.avatar_url || '/images/default-avatar.jpg',
     };
   };
@@ -299,6 +322,10 @@ export default function Home() {
         t.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
         t.dojoHost.toLowerCase().includes(searchQuery.toLowerCase())
       );
+
+  if (loadingTournaments || loadingDojos || loadingWarriors || loadingActivities) {
+    return <BitcoinLoader />;
+  }
 
   return (
     <div className={`bg-gray-950 text-white min-h-screen ${loaded ? 'fade-in' : 'opacity-0'} transition-opacity duration-700`}>

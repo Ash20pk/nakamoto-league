@@ -23,6 +23,7 @@ import {
   Check,
   Award
 } from 'lucide-react';
+import BitcoinLoader from '@/components/BitcoinLoader';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/database.types';
 import Navbar from '@/components/Navbar';
@@ -369,17 +370,7 @@ const WarriorProfile = () => {
   };
 
   if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="container mx-auto px-4 py-8 pt-24">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-          </div>
-        </div>
-        <Footer />
-      </>
-    );
+    return <BitcoinLoader />;
   }
 
   if (error || !warrior) {
@@ -541,7 +532,7 @@ const WarriorProfile = () => {
                     className="flex items-center justify-center bg-green-900/30 text-green-400 border border-green-500/20 rounded-full px-3 py-1 text-xs hover:bg-green-900/50 transition-colors"
                   >
                     {updateLoading ? (
-                      <span className="animate-pulse">Saving...</span>
+                      <BitcoinLoader />
                     ) : (
                       <>
                         <Check className="w-3 h-3 mr-1" />
