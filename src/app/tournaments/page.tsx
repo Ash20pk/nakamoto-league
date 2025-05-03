@@ -237,7 +237,7 @@ const TournamentsPage = () => {
                   
                   {tournament.status === 'UPCOMING' && canJoinTournament && (
                     <button
-                      onClick={() => router.push(`/tournaments/${tournament.id}/register`)}
+                      onClick={() => router.push(`/tournaments/register/${tournament.id}`)}
                       className="w-full py-2 neon-button-red rounded-lg text-white"
                     >
                       Join Tournament

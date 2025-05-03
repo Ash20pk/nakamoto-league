@@ -18,7 +18,10 @@ import {
   Shield,
   ArrowRight,
   BarChart,
-  User
+  User,
+  Zap as ZapIcon,
+  Flame,
+  Star
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -88,6 +91,17 @@ export default function Home() {
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Game progression state
+  const [userLevel, setUserLevel] = useState(7);
+  const [userXP, setUserXP] = useState(375);
+  const [maxDailyXP, setMaxDailyXP] = useState(500);
+  const [dailyQuests, setDailyQuests] = useState([
+    { id: 1, name: 'Read Articles', description: 'Read 4 blockchain articles today', completed: 3, total: 4, xp: 50, icon: 'search', color: 'cyan' },
+    { id: 2, name: 'Join Tournament', description: 'Join 1 tournament this month', completed: 1, total: 1, xp: 100, icon: 'trophy', color: 'purple' },
+    { id: 3, name: 'Win Tournament', description: 'Win 1 tournament this month', completed: 0, total: 1, xp: 200, icon: 'award', color: 'red' },
+    { id: 4, name: 'Daily Login', description: 'Login to the platform today', completed: 1, total: 1, xp: 25, icon: 'clock', color: 'green' },
+  ]);
+
   const router = useRouter();
 
   // Transform API data to UI format
@@ -128,7 +142,7 @@ export default function Home() {
       members: dojo.totalWarriors || 0,
       // Use actual win rate data
       victories: Math.round((dojo.winRate || 0) * 10),
-      image: dojo.banner || '/images/default-dojo.jpg',
+      image: dojo.banner || '/images/default-dojo.png',
       // Use direct data: count tournaments where this dojo is the organizer
       activeTournaments: activeTournaments
     };
@@ -214,8 +228,6 @@ export default function Home() {
           page: 1
         });
 
-        // Fetch recent activities
-        fetchRecentActivities();
       } catch (err) {
         console.error("Error fetching data for homepage:", err);
         setError("Failed to load homepage data");
@@ -224,68 +236,6 @@ export default function Home() {
 
     fetchData();
   }, [fetchTournaments, fetchDojos, fetchWarriors]);
-
-  // Function to fetch recent activities
-  const fetchRecentActivities = async () => {
-    setLoadingActivities(true);
-    try {
-      // Since the activities API doesn't exist yet, we'll use sample data
-      // When the API is created, uncomment this code:
-      /*
-      const response = await fetch('/api/activities');
-      if (!response.ok) {
-        throw new Error('Failed to fetch activities');
-      }
-      const data = await response.json();
-      setRecentActivities(data.activities);
-      */
-      
-      // Use sample data for now
-      setRecentActivities([
-        {
-          id: 1,
-          time: "3 hours ago",
-          content: <>
-            <span className="font-medium text-cyan-400">Tokyo Blockchain Dojo</span> won the 
-            <span className="font-medium text-red-400"> Smart Contract Showdown</span> tournament!
-          </>,
-          type: "trophy"
-        },
-        {
-          id: 2,
-          time: "Yesterday",
-          content: <>
-            <span className="font-medium text-red-400">Blockchain Battle Royale</span> registrations are now open. 
-            128 spots available!
-          </>,
-          type: "notification"
-        },
-        {
-          id: 3,
-          time: "2 days ago",
-          content: <>
-            <span className="font-medium text-cyan-400">Satoshi Nakamoto</span> achieved the 
-            highest rank in <span className="font-medium text-red-400">Web3 Warriors Leaderboard</span>!
-          </>,
-          type: "achievement"
-        },
-        {
-          id: 4,
-          time: "1 week ago",
-          content: <>
-            New dojo <span className="font-medium text-cyan-400">Fukuoka Blockchain Society</span> has 
-            joined the league.
-          </>,
-          type: "dojo"
-        }
-      ]);
-    } catch (err) {
-      console.error("Error fetching activities:", err);
-      setError("Failed to load activities");
-    } finally {
-      setLoadingActivities(false);
-    }
-  };
 
   useEffect(() => {
     const glitchInterval = setInterval(() => {
@@ -351,16 +301,16 @@ export default function Home() {
                   </h1>
                 </div>
                 <p className="text-gray-400 text-base mb-4">
-                  Track hackathons, join elite tech dojos, and compete with fellow warriors in the Nakamoto League.
+                  Track tournaments, join elite tech dojos, and compete with fellow warriors in the Nakamoto League.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <div className="cyber-badge-red">
                     <Trophy className="w-4 h-4 mr-1" />
-                    <span>{ongoingTournaments.length} Active Hackathons</span>
+                    <span>{ongoingTournaments.length} Active Tournaments</span>
                   </div>
                   <div className="cyber-badge-cyan">
                     <Users className="w-4 h-4 mr-1" />
-                    <span>500+ Active Warriors</span>
+                    <span>{apiWarriors.length > 500 ? '500+' : apiWarriors.length} Active Warriors</span>
                   </div>
                   <div className="cyber-badge-purple">
                     <Building className="w-4 h-4 mr-1" />
@@ -391,7 +341,9 @@ export default function Home() {
                         <div className="sm:col-span-3">
                           <p className="text-gray-400 text-xs mb-1">Dojo</p>
                           <p className="text-sm text-white truncate">
-                            {authState.warrior.dojo_id ? 'Member of a Dojo' : 'Independent Warrior'}
+                            {authState.warrior.dojo_id ? 
+                              (apiDojos.find(d => d.id === authState.warrior?.dojo_id)?.name || 'Unknown Dojo') : 
+                              'Independent Warrior'}
                           </p>
                         </div>
                       </div>
@@ -591,33 +543,32 @@ export default function Home() {
                         <div 
                           key={warrior.id} 
                           onClick={() => router.push(`/warriors/${warrior.id}`)}
-                          className="flex items-center justify-between bg-gray-800/30 border border-gray-800 rounded-md p-3 hover:bg-gray-800/50 transition-colors cursor-pointer"
+                          className="flex items-center p-2 hover:bg-gray-800/50 rounded-md transition-colors cursor-pointer"
                         >
-                          <div className="flex items-center">
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-cyan-500/30 mr-3">
-                              <Image 
-                                src={warrior.avatar}
-                                alt={warrior.name}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                            <div>
-                              <div className="flex items-center">
-                                <p className="font-medium text-white">{warrior.name}</p>
-                                <span className="ml-2 px-1.5 py-0.5 text-xs bg-red-500/20 text-red-400 rounded">
-                                  #{warrior.rank}
-                                </span>
-                              </div>
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden mr-3 border border-cyan-500/30">
+                            <Image 
+                              src={warrior.avatar}
+                              alt={warrior.name}
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-white group-hover:text-cyan-400 transition-colors">{warrior.name}</p>
+                            <div className="flex text-xs text-gray-400">
+                              <span className="flex items-center mr-3">
+                                <Users className="w-3 h-3 mr-1" />
+                                {warrior.dojo}
+                              </span>
+                              <span className="flex items-center">
+                                <Trophy className="w-3 h-3 mr-1 text-red-400" />
+                                {warrior.victories} wins
+                              </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-cyan-400">{warrior.dojo}</p>
-                            <p className="text-xs text-gray-400">
-                              <Trophy className="w-3 h-3 inline mr-1 text-red-400" />
-                              {warrior.victories} victories
-                            </p>
+                          <div className="cyber-badge-cyan text-xs py-1">
+                            #{warrior.rank}
                           </div>
                         </div>
                       ))}
@@ -628,37 +579,78 @@ export default function Home() {
               
               {/* Sidebar Content */}
               <div className="order-1 lg:order-2">
-                {/* User Quick Stats */}
+                {/* Daily Activity Tracker */}
                 <div className="bg-gray-900/40 backdrop-blur-sm rounded-lg border border-gray-800 p-4 mb-6">
-                  <h2 className="text-lg font-bold text-white font-serif-jp mb-4 flex items-center">
-                    <BarChart className="w-5 h-5 mr-2 text-cyan-400" />
-                    Your Tournament Stats
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold text-white">Daily Activity Tracker</h2>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/50 rounded-full border border-gray-700">
+                      <Flame className="w-4 h-4 text-orange-500" />
+                      <span className="text-xs font-medium text-orange-400">{authState.warrior?.streak || 0} Day Streak</span>
+                    </div>
+                  </div>
                   
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Total Tournaments</span>
-                      <span className="text-white font-medium">7</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Victories</span>
-                      <span className="text-red-400 font-medium">3</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Top Placement</span>
-                      <span className="text-cyan-400 font-medium">2nd Place</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Current Streak</span>
-                      <span className="text-purple-400 font-medium">2 tournaments</span>
-                    </div>
-                    
-                    <div className="pt-2 border-t border-gray-800">
-                      <Link href="/profile/tournaments" className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center justify-end">
-                        View Tournament History
-                        <ArrowRight className="w-4 h-4 ml-1" />
-                      </Link>
-                    </div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-400">Daily Progress</span>
+                    <span className="text-cyan-400">{userXP}/{maxDailyXP} XP</span>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-3 mb-3">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-purple-500 h-3 rounded-full" 
+                      style={{ width: `${(userXP/maxDailyXP) * 100}%` }}
+                    ></div>
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                    {dailyQuests.slice(0, 2).map((quest) => {
+                      const iconMap: Record<string, any> = {
+                        search: Search,
+                        trophy: Trophy,
+                        award: Award,
+                        clock: Clock
+                      };
+                      const Icon = iconMap[quest.icon];
+                      const progress = (quest.completed / quest.total) * 100;
+                      
+                      return (
+                        <div key={quest.id} className="bg-gray-800/40 border border-gray-800 rounded-lg p-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="flex items-center">
+                              <div className={`w-8 h-8 rounded-full bg-${quest.color}-500/20 flex items-center justify-center mr-2`}>
+                                <Icon className={`w-4 h-4 text-${quest.color}-400`} />
+                              </div>
+                              <div>
+                                <h5 className="font-bold text-white text-sm">{quest.name}</h5>
+                                <p className="text-xs text-gray-400">{quest.description}</p>
+                              </div>
+                            </div>
+                            <div className="text-yellow-400 font-bold text-sm">+{quest.xp} XP</div>
+                          </div>
+                          
+                          <div className="w-full bg-gray-900 rounded-full h-2 mb-1">
+                            <div 
+                              className={`bg-${quest.color}-500 h-2 rounded-full`} 
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">{quest.completed}/{quest.total} completed</span>
+                            <span className={`text-${quest.color}-400`}>
+                              {progress === 100 ? 'Complete!' : `${progress}%`}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <button 
+                      onClick={() => document.getElementById('daily-activity-modal')?.classList.remove('hidden')}
+                      className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center"
+                    >
+                      View All Quests
+                      <ArrowRight className="w-3 h-3 ml-1" />
+                    </button>
                   </div>
                 </div>
                 
@@ -681,7 +673,7 @@ export default function Home() {
                         <Link
                           key={dojo.id}
                           href={`/dojos/${dojo.id}`}
-                          className="flex items-center p-2 hover:bg-gray-800/50 rounded-md transition-colors group"
+                          className="flex items-center p-2 hover:bg-gray-800/50 rounded-md transition-colors"
                         >
                           <div className="relative w-10 h-10 rounded overflow-hidden mr-3 border border-gray-700">
                             <Image 
@@ -692,7 +684,7 @@ export default function Home() {
                             />
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-white group-hover:text-cyan-400 transition-colors">{dojo.name}</p>
+                            <p className="font-medium text-white">{dojo.name}</p>
                             <div className="flex text-xs text-gray-400">
                               <span className="flex items-center mr-3">
                                 <Users className="w-3 h-3 mr-1" />
@@ -712,47 +704,239 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Activity Feed
-                <div className="bg-gray-900/40 backdrop-blur-sm rounded-lg border border-gray-800 overflow-hidden">
-                  <div className="border-b border-gray-800 p-4 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-white font-serif-jp flex items-center">
-                      <Bell className="w-5 h-5 mr-2 text-purple-400" />
-                      Recent Activity
-                    </h2>
-                    <Link href="/activity" className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center">
-                      View All
-                      <ChevronRight className="w-4 h-4 ml-1" />
-                    </Link>
-                  </div>
-                  
-                  <div className="p-4">
-                    <div className="space-y-4">
-                      {recentActivities.map((activity) => (
-                        <div key={activity.id} className="p-3 bg-gray-800/30 border border-gray-800 rounded-md">
-                          <div className="flex items-start">
-                            <div className="mr-3 mt-1">
-                              {activity.type === 'trophy' && <Trophy className="w-5 h-5 text-red-400" />}
-                              {activity.type === 'notification' && <Bell className="w-5 h-5 text-cyan-400" />}
-                              {activity.type === 'achievement' && <Award className="w-5 h-5 text-purple-400" />}
-                              {activity.type === 'dojo' && <Shield className="w-5 h-5 text-cyan-400" />}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm text-gray-300">{activity.content}</p>
-                              <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div> */}
               </div>
             </div>
           </div>
         </section>
       </main>
       <Footer />
+      
+      {/* Daily Activity Modal */}
+      <div id="daily-activity-modal" className="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => document.getElementById('daily-activity-modal')?.classList.add('hidden')}></div>
+        <div className="relative bg-gray-900 border border-gray-800 rounded-lg shadow-neon-subtle w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center">
+            <h2 className="text-xl font-bold text-white">Daily Activity Tracker</h2>
+            <button 
+              onClick={() => document.getElementById('daily-activity-modal')?.classList.add('hidden')}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="p-6">
+            {/* User Level and XP Progress */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 bg-gray-800/30 p-4 rounded-lg border border-gray-800">
+              <div className="flex items-center mb-4 md:mb-0">
+                <div className="relative mr-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center">
+                      <div className="text-2xl font-bold text-yellow-400">Lv.{userLevel}</div>
+                    </div>
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-gray-900 rounded-full px-2 py-0.5 text-xs font-bold">
+                    +{userXP} XP
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white font-serif-jp">Game Progress</h3>
+                  <div className="flex items-center mt-1">
+                    <Flame className="w-4 h-4 text-orange-500 mr-1" />
+                    <span className="text-sm text-orange-400 font-medium">{authState.warrior?.streak || 0} Day Streak</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-full md:w-1/2">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-400">Daily Progress</span>
+                  <span className="text-cyan-400">{userXP}/{maxDailyXP} XP</span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-3 mb-1">
+                  <div 
+                    className="bg-gradient-to-r from-cyan-500 to-purple-500 h-3 rounded-full" 
+                    style={{ width: `${(userXP/maxDailyXP) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Level {userLevel}</span>
+                  <span>Level {userLevel + 1}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Daily Quests */}
+            <div className="mb-8">
+              <h4 className="text-lg font-bold text-white mb-4 flex items-center">
+                <Award className="mr-2 text-yellow-500" size={18} />
+                Daily Quests
+                <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
+                  {dailyQuests.filter(q => (q.completed / q.total) * 100 === 100).length}/{dailyQuests.length} Completed
+                </span>
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {dailyQuests.map((quest) => {
+                  const iconMap: Record<string, any> = {
+                    search: Search,
+                    trophy: Trophy,
+                    award: Award,
+                    clock: Clock
+                  };
+                  const Icon = iconMap[quest.icon];
+                  const progress = (quest.completed / quest.total) * 100;
+                  
+                  return (
+                    <div key={quest.id} className="p-4 bg-gray-800/40 border border-gray-800 rounded-lg h-full">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center">
+                          <div className={`w-10 h-10 rounded-full bg-${quest.color}-500/20 flex items-center justify-center mr-3 flex-shrink-0`}>
+                            <Icon className={`w-5 h-5 text-${quest.color}-400`} />
+                          </div>
+                          <div>
+                            <h5 className="font-bold text-white">{quest.name}</h5>
+                            <p className="text-xs text-gray-400">{quest.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-yellow-400 font-bold">+{quest.xp} XP</div>
+                      </div>
+                      
+                      <div className="w-full bg-gray-900 rounded-full h-2.5 mb-1">
+                        <div 
+                          className={`bg-${quest.color}-500 h-2.5 rounded-full`} 
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">{quest.completed}/{quest.total} completed</span>
+                        <span className={`text-${quest.color}-400`}>
+                          {progress === 100 ? 'Complete!' : `${progress}%`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Weekly Challenges */}
+            <div className="mb-8">
+              <h4 className="text-lg font-bold text-white mb-4 flex items-center">
+                <Shield className="mr-2 text-blue-500" size={18} />
+                Weekly Challenges
+                <span className="ml-2 text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
+                  1/2 Completed
+                </span>
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-800/40 border border-gray-800 rounded-lg h-full">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-3 flex-shrink-0">
+                        <Trophy className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-white">Tournament Participant</h5>
+                        <p className="text-xs text-gray-400">Join 3 tournaments this week</p>
+                      </div>
+                    </div>
+                    <div className="text-yellow-400 font-bold">+150 XP</div>
+                  </div>
+                  
+                  <div className="w-full bg-gray-900 rounded-full h-2.5 mb-1">
+                    <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: '33%' }}></div>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">1/3 completed</span>
+                    <span className="text-blue-400">33%</span>
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-gray-800/40 border border-gray-800 rounded-lg h-full">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center mr-3 flex-shrink-0">
+                        <Users className="w-5 h-5 text-orange-400" />
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-white">Social Butterfly</h5>
+                        <p className="text-xs text-gray-400">Interact with 5 warriors</p>
+                      </div>
+                    </div>
+                    <div className="text-yellow-400 font-bold">+200 XP</div>
+                  </div>
+                  
+                  <div className="w-full bg-gray-900 rounded-full h-2.5 mb-1">
+                    <div className="bg-orange-500 h-2.5 rounded-full" style={{ width: '100%' }}></div>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">5/5 completed</span>
+                    <span className="text-orange-400">Complete!</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Monthly Achievements */}
+            <div>
+              <h4 className="text-lg font-bold text-white mb-4 flex items-center">
+                <Star className="mr-2 text-purple-500" size={18} />
+                Monthly Achievements
+                <span className="ml-2 text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">
+                  1/3 Completed
+                </span>
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-gray-800/40 border border-gray-800 rounded-lg text-center h-full">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-purple-500/20 flex items-center justify-center mb-2">
+                    <Trophy className="w-8 h-8 text-purple-400" />
+                  </div>
+                  <h5 className="font-bold text-white mb-1">Tournament Master</h5>
+                  <p className="text-xs text-gray-400 mb-2">Win 3 tournaments this month</p>
+                  <div className="text-yellow-400 font-bold mb-1">+500 XP</div>
+                  <div className="text-xs text-purple-400">1/3</div>
+                </div>
+                
+                <div className="p-4 bg-gray-800/40 border border-gray-800 rounded-lg text-center h-full">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-cyan-500/20 flex items-center justify-center mb-2">
+                    <Search className="w-8 h-8 text-cyan-400" />
+                  </div>
+                  <h5 className="font-bold text-white mb-1">Knowledge Seeker</h5>
+                  <p className="text-xs text-gray-400 mb-2">Read 20 blockchain articles</p>
+                  <div className="text-yellow-400 font-bold mb-1">+300 XP</div>
+                  <div className="text-xs text-cyan-400">9/20</div>
+                </div>
+                
+                <div className="p-4 bg-gray-800/40 border border-gray-800 rounded-lg text-center h-full">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 flex items-center justify-center mb-2">
+                    <Shield className="w-8 h-8 text-red-400" />
+                  </div>
+                  <h5 className="font-bold text-white mb-1">Dojo Defender</h5>
+                  <p className="text-xs text-gray-400 mb-2">Represent your dojo in 5 battles</p>
+                  <div className="text-yellow-400 font-bold mb-1">+400 XP</div>
+                  <div className="text-xs text-red-400">0/5</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 p-4 flex justify-between items-center bg-gray-900/80">
+            <div className="text-sm text-gray-400">
+              Complete daily quests to earn XP and increase your streak!
+            </div>
+            <button 
+              onClick={() => document.getElementById('daily-activity-modal')?.classList.add('hidden')}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

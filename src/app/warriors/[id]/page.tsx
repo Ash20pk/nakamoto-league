@@ -661,7 +661,7 @@ const WarriorProfile = () => {
                   <div className="flex items-center mb-3">
                     <div className="relative w-12 h-12 rounded overflow-hidden border border-blue-500/30 mr-3">
                       <Image 
-                        src={warrior.dojo.banner_url || '/images/default-dojo.jpg'}
+                        src={warrior.dojo.banner_url || '/images/default-dojo.png'}
                         alt={warrior.dojo.name}
                         fill
                         className="object-cover"

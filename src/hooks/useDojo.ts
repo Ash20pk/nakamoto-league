@@ -96,7 +96,7 @@ export function useDojo() {
           totalWarriors,
           winRate,
           specialization,
-          banner: dojo.banner_url || '/images/default-dojo.jpg'
+          banner: dojo.banner_url || '/images/default-dojo.png'
         };
       }) || [];
 

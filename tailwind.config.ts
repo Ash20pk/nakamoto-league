@@ -86,6 +86,12 @@ export default {
         'float': {
           '0%': { backgroundPosition: '0% 0%' },
           '100%': { backgroundPosition: '100% 100%' }
+        },
+        'streak-bounce': {
+          '0%': { transform: 'translateY(0) scale(0.9)', opacity: '0' },
+          '15%': { transform: 'translateY(-8px) scale(1.1)', opacity: '1' },
+          '70%': { transform: 'translateY(-16px) scale(1)', opacity: '1' },
+          '100%': { transform: 'translateY(-24px) scale(0.9)', opacity: '0' }
         }
       },
       animation: {
@@ -93,7 +99,8 @@ export default {
         'pulse': 'pulse 2s ease-in-out infinite',
         'expand': 'expand 0.5s ease-out',
         'ping': 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
-        'float': 'float 60s linear infinite'
+        'float': 'float 60s linear infinite',
+        'streak-bounce': 'streak-bounce 1.5s cubic-bezier(0.2, 0, 0.3, 1) forwards'
       }
     },
   },

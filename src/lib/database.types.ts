@@ -221,6 +221,7 @@ export interface Database {
           energy?: number
           energy_last_updated?: string
           last_check_in?: string
+          streak?: number
           created_at: string
           updated_at: string
         }
@@ -238,6 +239,7 @@ export interface Database {
           energy?: number
           energy_last_updated?: string
           last_check_in?: string
+          streak?: number
           created_at?: string
           updated_at?: string
         }
@@ -255,6 +257,7 @@ export interface Database {
           energy?: number
           energy_last_updated?: string
           last_check_in?: string
+          streak?: number
           created_at?: string
           updated_at?: string
         }

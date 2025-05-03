@@ -1,22 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Sword, Bell, Zap, User, Menu, X, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Sword, Bell, Zap, User, Menu, X, ChevronDown, Flame, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter, usePathname } from 'next/navigation';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import type { Database } from '@/lib/database.types';
 
 interface NavbarProps {
   activeSection?: string;
 }
 
 const Navbar = ({ activeSection }: NavbarProps) => {
-  const { authState, signOut } = useAuth();
+  const { authState, setAuthState, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [streakHovered, setStreakHovered] = useState(false);
+  const [checkInLoading, setCheckInLoading] = useState(false);
+  const [showStreakAnimation, setShowStreakAnimation] = useState(false);
+  const supabase = createClientComponentClient<Database>();
 
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -46,6 +52,52 @@ const Navbar = ({ activeSection }: NavbarProps) => {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  // Handle daily check-in
+  const handleDailyCheckIn = async () => {
+    if (!authState.warrior) return;
+    
+    setCheckInLoading(true);
+    try {
+      // Call the warrior_daily_check_in function
+      const { data, error } = await supabase
+        .rpc('warrior_daily_check_in', { 
+          p_warrior_id: authState.warrior.id 
+        });
+        
+      if (error) throw error;
+      
+      // Refresh warrior data to get updated energy and last_check_in
+      const { data: warriorData, error: warriorError } = await supabase
+        .from('warriors')
+        .select('*')
+        .eq('id', authState.warrior.id)
+        .single();
+        
+      if (warriorError) throw warriorError;
+      
+      // Update the local state with the new data
+      setAuthState((prev) => ({
+        ...prev,
+        warrior: {
+          ...prev.warrior!,
+          energy: warriorData.energy,
+          last_check_in: warriorData.last_check_in,
+          streak: warriorData.streak
+        }
+      }));
+
+      // Show streak animation
+      setShowStreakAnimation(true);
+      setTimeout(() => {
+        setShowStreakAnimation(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Error checking in:', error);
+    } finally {
+      setCheckInLoading(false);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -143,6 +195,52 @@ const Navbar = ({ activeSection }: NavbarProps) => {
           <div className="flex items-center gap-4">
             {authState.user ? (
               <>
+                {/* Streak Counter with Check-in Button on Hover */}
+                <div 
+                  className="hidden md:flex items-center gap-1 px-2 py-1 bg-black rounded-full border border-orange-500/40 relative cursor-pointer"
+                  onMouseEnter={() => setStreakHovered(true)}
+                  onMouseLeave={() => setStreakHovered(false)}
+                >
+                  {/* Streak Animation */}
+                  {showStreakAnimation && (
+                    <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 flex items-center justify-center z-50 pointer-events-none">
+                      <div className="animate-streak-bounce flex items-center justify-center px-3 py-1 bg-black rounded-full border border-orange-500/30">
+                        <span className="text-yellow-300 font-bold text-sm mr-0.5">+1</span>
+                        <Flame className="w-4 h-4 text-orange-500" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <Flame className={`w-4 h-4 text-orange-500 transition-all duration-300 ${streakHovered ? 'opacity-0' : 'opacity-100'}`} />
+                  <span className={`text-xs font-medium text-orange-400 transition-all duration-300 ${streakHovered ? 'opacity-0' : 'opacity-100'}`}>
+                    {authState.warrior?.streak || 0} Day Streak
+                  </span>
+                  
+                  {streakHovered && (
+                    <button
+                      onClick={handleDailyCheckIn}
+                      disabled={checkInLoading || authState.warrior?.last_check_in === new Date().toISOString().split('T')[0]}
+                      className="absolute inset-0 rounded-full flex items-center justify-center gap-1 transition-all duration-300 bg-black"
+                    >
+                      {checkInLoading ? (
+                        <span className="animate-pulse text-xs font-medium text-orange-200">Checking In...</span>
+                      ) : !authState.warrior ? (
+                        <span className="text-xs font-medium text-orange-300">Create Warrior</span>
+                      ) : authState.warrior.last_check_in === new Date().toISOString().split('T')[0] ? (
+                        <>
+                          <Check size={14} className="text-green-400" />
+                          <span className="text-xs font-medium text-green-300">Checked In</span>
+                        </>
+                      ) : (
+                        <>
+                          <Zap size={14} className="text-yellow-300" />
+                          <span className="text-xs font-medium text-yellow-200">Check In</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+                
                 <button
                   onClick={handleNotificationsClick}
                   className="relative group p-2 hover:bg-gray-900/50 rounded transition-colors"
