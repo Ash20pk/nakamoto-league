@@ -82,6 +82,15 @@ interface Warrior {
     id: string;
     name: string;
     banner_url: string | null;
+    location?: string;
+  };
+  metadata?: {
+    bio?: string;
+    socialLinks?: {
+      github?: string;
+      twitter?: string;
+      website?: string;
+    };
   };
 }
 
@@ -149,10 +158,24 @@ const WarriorProfile = () => {
         
         if (tournamentsError) throw tournamentsError;
         
+        // Debug the tournament data structure
+        console.log('Tournament data:', JSON.stringify(tournamentsData, null, 2));
+        
         // Process and set the warrior data
         if (warriorData) {
           setWarrior(warriorData);
-          setTournaments(tournamentsData.map(t => t.tournament));
+          
+          // Safely handle the tournament data based on its structure
+          // Using type assertion to handle the unknown structure
+          const mappedTournaments: Tournament[] = tournamentsData ? 
+            tournamentsData.map((entry: any) => ({
+              id: entry.tournament?.id || '',
+              title: entry.tournament?.title || '',
+              start_date: entry.tournament?.start_date || '',
+              end_date: entry.tournament?.end_date || ''
+            })) : [];
+            
+          setTournaments(mappedTournaments);
         }
       } catch (err) {
         console.error('Error fetching warrior data:', err);
@@ -186,7 +209,7 @@ const WarriorProfile = () => {
   const uploadAvatar = async (file: File, warriorId: string): Promise<string | null> => {
     try {
       // Make sure we're only allowing the owner to upload
-      if (!authState.warrior?.id || authState.warrior.id !== warrior.id) {
+      if (!authState.warrior?.id || !warrior || authState.warrior.id !== warrior.id) {
         console.error('Unauthorized: Only the owner can upload an avatar');
         throw new Error('Unauthorized: Only the owner can upload an avatar');
       }

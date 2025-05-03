@@ -337,8 +337,8 @@ const TournamentPage = () => {
             </div>
             <div>
               <p className="text-white font-medium">{tournament.organizer.name}</p>
-              <Link href={`/profile/${tournament.organizer.id}`} className="text-cyan-400 text-sm hover:underline">
-                View Profile
+              <Link href={`/dojos/${tournament.organizer.id}`} className="text-cyan-400 text-sm hover:underline">
+                View Dojo
               </Link>
             </div>
           </div>

@@ -230,13 +230,25 @@ export default function CreateTournamentPage() {
     // Handle nested properties
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
-      setFormData({
-        ...formData,
-        [parent]: {
-          ...formData[parent as keyof typeof formData],
-          [child]: value
-        }
-      });
+      const parentKey = parent as keyof typeof formData;
+      const parentValue = formData[parentKey];
+      
+      // Check if the parent value is an object before spreading
+      if (parentValue && typeof parentValue === 'object' && !Array.isArray(parentValue)) {
+        setFormData({
+          ...formData,
+          [parent]: {
+            ...parentValue,
+            [child]: value
+          }
+        });
+      } else {
+        // Handle the case where parent doesn't exist or isn't an object
+        setFormData({
+          ...formData,
+          [parent]: { [child]: value }
+        });
+      }
     } else {
       setFormData({
         ...formData,
@@ -250,12 +262,13 @@ export default function CreateTournamentPage() {
     const { name, value } = e.target;
     let numericValue: number;
     
-    // Convert to number, default to 0 if empty
-    if (value === '') {
+    try {
+      numericValue = parseFloat(value);
+      if (isNaN(numericValue)) {
+        numericValue = 0;
+      }
+    } catch (error) {
       numericValue = 0;
-    } else {
-      numericValue = Number(value);
-      if (isNaN(numericValue)) return; // Don't update if not a number
     }
     
     // Handle nested properties
@@ -264,25 +277,63 @@ export default function CreateTournamentPage() {
       
       if (parts.length === 2) {
         const [parent, child] = parts;
-        setFormData({
-          ...formData,
-          [parent]: {
-            ...formData[parent as keyof typeof formData],
-            [child]: numericValue
-          }
-        });
+        const parentKey = parent as keyof typeof formData;
+        const parentValue = formData[parentKey];
+        
+        // Check if the parent value is an object before spreading
+        if (parentValue && typeof parentValue === 'object' && !Array.isArray(parentValue)) {
+          setFormData({
+            ...formData,
+            [parent]: {
+              ...parentValue,
+              [child]: numericValue
+            }
+          });
+        } else {
+          // Handle the case where parent doesn't exist or isn't an object
+          setFormData({
+            ...formData,
+            [parent]: { [child]: numericValue }
+          });
+        }
       } else if (parts.length === 3) {
         const [parent, child, grandchild] = parts;
-        setFormData({
-          ...formData,
-          [parent]: {
-            ...formData[parent as keyof typeof formData],
-            [child]: {
-              ...(formData[parent as keyof typeof formData] as any)[child],
-              [grandchild]: numericValue
-            }
+        const parentKey = parent as keyof typeof formData;
+        const parentValue = formData[parentKey];
+        
+        // Check if the parent value is an object before spreading
+        if (parentValue && typeof parentValue === 'object' && !Array.isArray(parentValue)) {
+          const childValue = (parentValue as any)[child];
+          
+          // Check if the child value is an object before spreading
+          if (childValue && typeof childValue === 'object' && !Array.isArray(childValue)) {
+            setFormData({
+              ...formData,
+              [parent]: {
+                ...parentValue,
+                [child]: {
+                  ...childValue,
+                  [grandchild]: numericValue
+                }
+              }
+            });
+          } else {
+            // Handle the case where child doesn't exist or isn't an object
+            setFormData({
+              ...formData,
+              [parent]: {
+                ...parentValue,
+                [child]: { [grandchild]: numericValue }
+              }
+            });
           }
-        });
+        } else {
+          // Handle the case where parent doesn't exist or isn't an object
+          setFormData({
+            ...formData,
+            [parent]: { [child]: { [grandchild]: numericValue } }
+          });
+        }
       }
     } else {
       setFormData({

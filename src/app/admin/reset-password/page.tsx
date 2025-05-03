@@ -1,13 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { KeyRound, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/database.types';
 
-export default function ResetPassword() {
+// Loading component to display while suspense is resolving
+function ResetPasswordLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-4">
+      <div className="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-lg shadow-md border border-gray-700">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-cyan-400">Reset Password</h1>
+          <p className="mt-2 text-gray-400">Loading...</p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mb-4"></div>
+          <p className="text-gray-300">Preparing reset form...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main reset password component
+function ResetPasswordForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -199,8 +218,8 @@ export default function ResetPassword() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-2 border border-gray-700 rounded-md bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                  placeholder="New password"
+                  className="pl-10 pr-10 py-2 w-full bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  placeholder="Enter your new password"
                 />
                 <button
                   type="button"
@@ -208,9 +227,9 @@ export default function ResetPassword() {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-500" />
+                    <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-400" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-500" />
+                    <Eye className="h-5 w-5 text-gray-500 hover:text-gray-400" />
                   )}
                 </button>
               </div>
@@ -231,8 +250,8 @@ export default function ResetPassword() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-2 border border-gray-700 rounded-md bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                  placeholder="Confirm password"
+                  className="pl-10 pr-10 py-2 w-full bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  placeholder="Confirm your new password"
                 />
               </div>
             </div>
@@ -241,34 +260,52 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 ${
+                  isLoading ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
               >
                 {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
                     Updating...
-                  </div>
-                ) : 'Reset Password'}
+                  </>
+                ) : (
+                  'Reset Password'
+                )}
               </button>
+            </div>
+
+            <div className="text-center text-sm">
+              <Link href="/admin/login" className="text-cyan-400 hover:text-cyan-300">
+                Return to login
+              </Link>
             </div>
           </form>
         ) : (
-          <div className="mt-4 text-center">
-            <p className="mb-4">
-              {error || 'There was a problem with your reset link.'}
+          <div className="text-center py-8">
+            <div className="text-red-400 text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-semibold text-red-400 mb-4">Invalid Reset Link</h2>
+            <p className="text-gray-400 mb-6">
+              This password reset link is invalid or has expired.
             </p>
-            <Link href="/admin/forgot-password" className="text-cyan-400 hover:text-cyan-300">
-              Request a new reset link
+            <Link
+              href="/admin/forgot-password"
+              className="inline-block px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-md text-white"
+            >
+              Request New Link
             </Link>
           </div>
         )}
-
-        <div className="text-center">
-          <Link href="/admin/login" className="text-sm text-cyan-400 hover:text-cyan-300">
-            Back to Login
-          </Link>
-        </div>
       </div>
     </div>
+  );
+}
+
+// Export the page component with Suspense boundary
+export default function ResetPassword() {
+  return (
+    <Suspense fallback={<ResetPasswordLoading />}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
