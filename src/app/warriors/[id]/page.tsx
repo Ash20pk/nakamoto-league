@@ -21,7 +21,8 @@ import {
   Upload,
   X,
   Check,
-  Award
+  Award,
+  Shuffle
 } from 'lucide-react';
 import BitcoinLoader from '@/components/BitcoinLoader';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -30,6 +31,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/providers/AuthProvider';
 import { formatDistanceToNow } from 'date-fns';
+import { getEntityAvatar, fetchAndStoreRandomAvatar } from '@/utils/avatarUtils';
 
 // Helper functions for experience and level calculations
 const getNextLevelExp = (currentLevel: number): number => {
@@ -194,17 +196,52 @@ const WarriorProfile = () => {
       const file = e.target.files[0];
       setAvatarFile(file);
       
-      // Create preview URL
+      // Create preview
       const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setAvatarPreview(e.target.result as string);
-        }
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
-  
+
+  // Function to handle random avatar generation
+  const handleGenerateRandomAvatar = async () => {
+    if (!warrior || !authState.user) return;
+    
+    try {
+      setUpdateLoading(true);
+      
+      // Generate a random avatar and store it in Supabase
+      const storedAvatarUrl = await fetchAndStoreRandomAvatar(
+        supabase,
+        authState.user.id,
+        'warrior',
+        warrior.id
+      );
+      
+      if (storedAvatarUrl) {
+        // Set the preview to the stored avatar URL
+        setAvatarPreview(storedAvatarUrl);
+        // We'll set avatarFile to null since we're using a URL directly
+        setAvatarFile(null);
+      } else {
+        // Fallback to direct API URL if storage fails
+        const fallbackUrl = getEntityAvatar('warrior', warrior.id + Date.now());
+        setAvatarPreview(fallbackUrl);
+        setAvatarFile(null);
+      }
+    } catch (error) {
+      console.error('Error generating random avatar:', error);
+      // Fallback to direct API URL
+      const fallbackUrl = getEntityAvatar('warrior', warrior.id + Date.now());
+      setAvatarPreview(fallbackUrl);
+      setAvatarFile(null);
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
   // Function to upload avatar to storage
   const uploadAvatar = async (file: File, warriorId: string): Promise<string | null> => {
     try {
@@ -308,6 +345,9 @@ const WarriorProfile = () => {
         } else {
           console.log('Avatar upload failed, keeping existing avatar');
         }
+      } else if (avatarPreview && avatarPreview !== warrior.avatar_url) {
+        // If we have a preview but no file, it means we're using a generated avatar
+        avatarUrl = avatarPreview;
       }
       
       // Create metadata object
@@ -440,43 +480,63 @@ const WarriorProfile = () => {
           {/* Content */}
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-center h-full p-4">
             <div className="relative mb-4 md:mb-0 md:mr-8">
+              {/* Avatar preview */}
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-purple-500 relative">
-                {isEditMode ? (
-                  <>
-                    <Image
-                      src={avatarPreview || warrior.avatar_url || '/images/default-avatar.png'}
-                      alt={warrior.name}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                    <label 
-                      htmlFor="avatar-upload"
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 cursor-pointer"
-                    >
-                      <Upload className="w-8 h-8 text-white" />
-                      <input 
-                        id="avatar-upload" 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={handleAvatarChange}
-                      />
-                    </label>
-                  </>
-                ) : (
-                  <Image
-                    src={warrior.avatar_url || '/images/default-avatar.png'}
-                    alt={warrior.name}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                )}
+                <Image
+                  src={avatarPreview || warrior.avatar_url || getEntityAvatar('warrior', warrior.id)}
+                  alt={warrior.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+                {/* Scanline effect */}
+                <div className="absolute inset-0 bg-scan-lines opacity-20 pointer-events-none"></div>
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-red p-1.5 rounded-full">
+              
+              {/* Rank badge */}
+              <div className="absolute -bottom-2 -right-2 bg-red p-1.5 rounded-full shadow-neon-red-sm">
                 <Sword className="w-5 h-5 text-white" />
               </div>
+              
+              {/* Edit mode controls */}
+              {isEditMode && (
+                <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  {/* Upload button */}
+                  <label 
+                    htmlFor="avatar-upload"
+                    className="bg-gray-800 text-white px-2 py-1 rounded text-xs cursor-pointer hover:bg-gray-700 transition-colors border border-red/30 flex items-center"
+                  >
+                    <Upload className="w-3 h-3 mr-1 text-red" />
+                    Upload
+                    <input 
+                      id="avatar-upload" 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleAvatarChange}
+                    />
+                  </label>
+                  
+                  {/* Generate button */}
+                  <button
+                    onClick={handleGenerateRandomAvatar}
+                    className="bg-gray-800 text-white px-2 py-1 rounded text-xs cursor-pointer hover:bg-gray-700 transition-colors border border-purple-500/30 flex items-center"
+                    disabled={updateLoading}
+                  >
+                    {updateLoading ? (
+                      <span className="flex items-center">
+                        <div className="animate-spin w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full mr-1"></div>
+                        <span>Loading</span>
+                      </span>
+                    ) : (
+                      <>
+                        <Shuffle className="w-3 h-3 mr-1 text-purple-500" />
+                        Random
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
             
             <div className="text-center md:text-left">

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sword, Shield, Trophy, Zap, Users, Calendar, ArrowRight, Clock, MapPin, Eye, Check, Award, UserCircle, Camera, Building, Star, ChevronRight, Search, Flame } from 'lucide-react';
+import { Sword, Shield, Trophy, Zap, Users, Calendar, ArrowRight, Clock, MapPin, Eye, Check, Award, UserCircle, Camera, Building, Star, ChevronRight, Search, Flame, Shuffle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/providers/AuthProvider';
@@ -11,6 +11,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BitcoinLoader from '@/components/BitcoinLoader';
 import { usePermissions } from '@/hooks/usePermissions';
+import { getEntityAvatar, fetchAndStoreRandomAvatar } from '@/utils/avatarUtils';
 
 // Import the AuthState type from AuthProvider
 import type { AuthState } from '@/providers/AuthProvider';
@@ -116,6 +117,43 @@ export default function Dashboard() {
     }
   };
 
+  // Handle random avatar generation
+  const handleGenerateRandomAvatar = async () => {
+    if (!authState.user) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Generate a random avatar and store it in Supabase
+      const storedAvatarUrl = await fetchAndStoreRandomAvatar(
+        supabase,
+        authState.user.id,
+        'warrior',
+        authState.user.id
+      );
+      
+      if (storedAvatarUrl) {
+        // Set the preview to the stored avatar URL
+        setAvatarPreview(storedAvatarUrl);
+        // We'll set avatarFile to null since we're using a URL directly
+        setAvatarFile(null);
+      } else {
+        // Fallback to direct API URL if storage fails
+        const fallbackUrl = getEntityAvatar('warrior', authState.user.id + Date.now());
+        setAvatarPreview(fallbackUrl);
+        setAvatarFile(null);
+      }
+    } catch (error) {
+      console.error('Error generating random avatar:', error);
+      // Fallback to direct API URL
+      const fallbackUrl = getEntityAvatar('warrior', authState.user.id + Date.now());
+      setAvatarPreview(fallbackUrl);
+      setAvatarFile(null);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Handle profile submission
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,6 +227,9 @@ export default function Dashboard() {
           console.log('Avatar upload failed, will proceed with profile update only');
           // Continue with existing avatar
         }
+      } else if (avatarPreview && avatarPreview !== authState.profile?.avatar_url) {
+        // If we have a preview but no file, it means we're using a generated avatar
+        avatarUrl = avatarPreview;
       }
       
       // Prepare profile update data
@@ -629,7 +670,7 @@ export default function Dashboard() {
                         </div>
                         <div className="p-4 md:w-3/4 flex flex-col justify-between">
                           <div>
-                            <h3 className="text-lg font-bold mb-2 text-white group-hover:text-cyan transition-colors">
+                            <h3 className="text-lg font-bold text-white group-hover:text-cyan transition-colors">
                               {tournament.title}
                             </h3>
                             <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-400">
@@ -688,7 +729,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-purple-500/50">
                   <Image
-                    src={authState.warrior.avatar_url || '/images/default-avatar.png'}
+                    src={authState.warrior.avatar_url || getEntityAvatar('warrior', authState.warrior.id)}
                     alt={authState.warrior.name}
                     width={64}
                     height={64}
@@ -885,7 +926,7 @@ export default function Dashboard() {
             
             <div className="relative max-w-md w-full mx-4 overflow-hidden">
               {/* Cyberpunk styled card */}
-              <div className="bg-gray-900/90 border border-gray-800 rounded-lg shadow-neon-cyan overflow-hidden">
+              <div className="bg-gray-900 border border-gray-800 rounded-lg shadow-neon-cyan overflow-hidden">
                 {/* Glitch effect header */}
                 <div className="relative bg-gradient-to-r from-cyan/20 to-red/20 p-4 border-b border-gray-800">
                   <div className="absolute top-0 left-0 w-full h-full bg-glitch opacity-10"></div>
@@ -965,8 +1006,8 @@ export default function Dashboard() {
                       </div>
                       
                       {/* Avatar upload with cyberpunk styling */}
-                      <div className="flex flex-col items-center mb-4">
-                        <div className="relative group">
+                      <div className="flex flex-col items-center mb-6">
+                        <div className="relative">
                           <div className="w-32 h-32 rounded-full bg-gray-800 border-2 border-cyan overflow-hidden flex items-center justify-center shadow-neon-cyan">
                             {avatarPreview ? (
                               <img 
@@ -979,8 +1020,14 @@ export default function Dashboard() {
                             )}
                             <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
                           </div>
-                          <label className="absolute bottom-0 right-0 bg-red text-white p-2 rounded-full cursor-pointer group-hover:bg-red-light transition-colors shadow-neon-red">
-                            <Camera className="w-4 h-4" />
+                        </div>
+                        
+                        {/* Avatar controls below the preview */}
+                        <div className="mt-4 flex justify-center space-x-4">
+                          {/* Upload button */}
+                          <label className="bg-gray-800 text-white px-3 py-2 rounded-md cursor-pointer hover:bg-gray-700 transition-colors border border-red/30 flex items-center">
+                            <Camera className="w-4 h-4 mr-2 text-red" />
+                            <span className="text-xs">Upload</span>
                             <input 
                               type="file" 
                               className="hidden" 
@@ -988,17 +1035,38 @@ export default function Dashboard() {
                               onChange={handleAvatarChange}
                             />
                           </label>
-                          <div className="absolute -inset-1 bg-cyan/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          
+                          {/* Random avatar button */}
+                          <button 
+                            onClick={handleGenerateRandomAvatar}
+                            className="bg-gray-800 text-white px-3 py-2 rounded-md cursor-pointer hover:bg-gray-700 transition-colors border border-purple-500/30 flex items-center"
+                            title="Generate random avatar"
+                            disabled={isSubmitting}
+                          >
+                            {isSubmitting ? (
+                              <span className="flex items-center">
+                                <div className="animate-spin w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full mr-2"></div>
+                                <span className="text-xs">Loading...</span>
+                              </span>
+                            ) : (
+                              <>
+                                <Shuffle className="w-4 h-4 mr-2 text-purple-500" />
+                                <span className="text-xs">Random</span>
+                              </>
+                            )}
+                          </button>
                         </div>
-                        <div className="mt-3 flex items-center gap-2">
+                        
+                        {/* Label with Japanese styling */}
+                        <div className="mt-4 flex flex-col items-center">
                           <span className="text-cyan text-sm font-serif-jp">アバター</span>
-                          <span className="text-gray-400 text-xs font-mono">UPLOAD AVATAR</span>
+                          <span className="text-gray-400 text-xs font-mono">AVATAR</span>
                         </div>
                       </div>
                       
                       {/* Gamified progress indicator */}
                       <div className="h-1 bg-gray-800 rounded-full mt-4">
-                        <div className="h-full bg-gradient-to-r from-cyan to-red" style={{ width: avatarFile ? '100%' : '50%' }}></div>
+                        <div className="h-full bg-gradient-to-r from-cyan to-red" style={{ width: avatarFile || avatarPreview ? '100%' : '50%' }}></div>
                       </div>
                     </div>
                   )}

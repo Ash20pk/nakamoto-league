@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { useWarrior } from '@/hooks/useWarrior';
 import BitcoinLoader from '@/components/BitcoinLoader';
+import { getEntityAvatar } from '@/utils/avatarUtils';
 
 interface WarriorFilters {
   search?: string;
@@ -175,7 +176,7 @@ const WarriorsPage = () => {
                 <div className="relative h-48">
                   <div className="w-full h-full relative">
                     <Image
-                      src={warrior.avatar_url || '/images/default-avatar.png'}
+                      src={warrior.avatar_url || getEntityAvatar('warrior', warrior.id)}
                       alt={warrior.name}
                       fill
                       className="object-cover"

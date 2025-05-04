@@ -263,6 +263,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, accountType: 'warrior' | 'dojo') => {
     setAuthState((prev) => ({ ...prev, loading: true }));
     try {
+      // Validate inputs before attempting signup
+      if (!email || !password) {
+        throw new Error('Email and password are required');
+      }
+      
+      if (!['warrior', 'dojo'].includes(accountType)) {
+        throw new Error('Invalid account type');
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -273,7 +282,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase signup error:', error);
+        throw error;
+      }
+      
+      if (!data.user) {
+        throw new Error('Account creation failed. No user returned from authentication service.');
+      }
       
       // Wait a moment for the auth to complete
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -288,7 +304,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error signing up:', error);
       setAuthState((prev) => ({ ...prev, loading: false }));
-      throw error;
+      
+      // Make sure we're returning a proper error object
+      if (error instanceof Error) {
+        throw error;
+      } else if (typeof error === 'object' && error !== null) {
+        // Try to create a more informative error
+        const errorObj = error as any;
+        if (errorObj.message) {
+          throw new Error(errorObj.message);
+        } else if (errorObj.error_description) {
+          throw new Error(errorObj.error_description);
+        } else if (errorObj.error) {
+          throw new Error(errorObj.error);
+        } else {
+          throw new Error(`Registration failed: ${JSON.stringify(error)}`);
+        }
+      } else {
+        throw new Error('An unexpected error occurred during registration');
+      }
     }
   };
 

@@ -29,6 +29,7 @@ import type { Database } from '@/lib/database.types';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/providers/AuthProvider';
+import { getEntityAvatar } from '@/utils/avatarUtils';
 
 interface DojoData {
   id: string;
@@ -1077,7 +1078,7 @@ const DojoPage = () => {
                         >
                           <div className="relative w-12 h-12 rounded-full overflow-hidden mr-3 border border-cyan/30">
                             <Image 
-                              src={warrior.avatar_url || '/images/default-avatar.png'}
+                              src={warrior.avatar_url || getEntityAvatar('warrior', warrior.id)}
                               alt={warrior.name}
                               fill
                               className="object-cover"
@@ -1230,7 +1231,7 @@ const DojoPage = () => {
                         <div className="flex items-center">
                           <div className="relative w-14 h-14 rounded-full overflow-hidden mr-4 border border-cyan/30">
                             <Image 
-                              src={warrior.avatar_url || '/images/default-avatar.png'}
+                              src={warrior.avatar_url || getEntityAvatar('warrior', warrior.id)}
                               alt={warrior.name}
                               fill
                               className="object-cover"

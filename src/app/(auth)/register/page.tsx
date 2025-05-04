@@ -58,7 +58,11 @@ export default function RegisterPage() {
     try {
       // Sign up with Supabase using the proper account type
       const accountType = formData.accountType as 'warrior' | 'dojo';
-      await signUp(formData.email, formData.password, accountType);
+      const result = await signUp(formData.email, formData.password, accountType);
+      
+      if (!result || !result.user) {
+        throw new Error('Failed to create account. Please try again.');
+      }
 
       // Create profile
       const { data: userData } = await supabase.auth.getUser();
@@ -89,8 +93,21 @@ export default function RegisterPage() {
       console.error('Registration error:', err);
       if (err instanceof Error) {
         setError(err.message);
+      } else if (typeof err === 'object' && err !== null) {
+        // Try to extract more information from the error object
+        const errorObj = err as any;
+        if (errorObj.message) {
+          setError(errorObj.message);
+        } else if (errorObj.error_description) {
+          setError(errorObj.error_description);
+        } else if (errorObj.error) {
+          setError(errorObj.error);
+        } else {
+          // Convert the error object to a string for display
+          setError(`Registration failed: ${JSON.stringify(err)}`);
+        }
       } else {
-        setError('An unexpected error occurred');
+        setError('An unexpected error occurred during registration');
       }
     } finally {
       setLoading(false);

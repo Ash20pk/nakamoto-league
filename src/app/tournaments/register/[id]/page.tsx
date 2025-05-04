@@ -29,6 +29,7 @@ import BitcoinLoader from '@/components/BitcoinLoader';
 import { useAuth } from '@/providers/AuthProvider';
 import type { Database } from '@/lib/database.types';
 import type { Tournament } from '@/hooks/useTournament';
+import { getEntityAvatar } from '@/utils/avatarUtils';
 
 interface RegistrationData {
   fullName: string;
@@ -165,7 +166,7 @@ const TournamentRegistrationPage = () => {
           organizer: {
             id: tournamentData.organizer_id,
             name: tournamentData.profiles?.username || 'Unknown',
-            avatar: tournamentData.profiles?.avatar_url || '/images/default-avatar.png',
+            avatar: tournamentData.profiles?.avatar_url || getEntityAvatar('warrior', tournamentData.profiles?.id),
           },
           banner: tournamentData.banner_url || '/images/default-tournament.jpg',
         };

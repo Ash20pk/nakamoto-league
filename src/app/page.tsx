@@ -31,6 +31,7 @@ import { useDojo, type Dojo } from '@/hooks/useDojo';
 import { useWarrior } from '@/hooks/useWarrior';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
+import { getEntityAvatar } from '@/utils/avatarUtils';
 
 // Define interfaces for the UI components that match the expected format
 interface UITournament {
@@ -172,7 +173,7 @@ export default function Home() {
       dojo: warrior.dojos?.name || 'Independent',
       // Use actual win rate data
       victories: Math.round((warrior.win_rate || 0) * 10),
-      avatar: warrior.avatar_url || '/images/default-avatar.png',
+      avatar: warrior.avatar_url || getEntityAvatar('warrior', warrior.id),
     };
   };
 

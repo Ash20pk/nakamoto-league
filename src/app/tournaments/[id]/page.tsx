@@ -29,6 +29,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { Database } from '@/lib/database.types';
 import type { Tournament as BaseTournament } from '@/hooks/useTournament';
+import { getEntityAvatar } from '@/utils/avatarUtils';
 
 // Extended Tournament interface with additional properties needed for the detail page
 interface Tournament extends BaseTournament {
@@ -133,7 +134,7 @@ const TournamentPage = () => {
           organizer: {
             id: tournamentData.organizer_id,
             name: tournamentData.dojos?.name || 'Unknown',
-            avatar: tournamentData.dojos?.banner_url || '/images/default-avatar.jpg',
+            avatar: tournamentData.dojos?.banner_url || getEntityAvatar('dojo', tournamentData.dojos?.id),
           },
           banner: tournamentData.banner_url || '/images/default-tournament.jpg',
           rules: tournamentData.rules || [],
