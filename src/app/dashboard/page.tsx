@@ -539,7 +539,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-white mb-2">
-                  Welcome, <span className="text-cyan">{authState.profile?.username || 'Warrior'} 👋</span>
+                  Welcome, <span className="text-cyan">{authState.warrior?.name || 'Warrior'} 👋</span>
                 </h1>
               </div>
               {!authState.warrior && (
