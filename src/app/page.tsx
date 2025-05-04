@@ -172,7 +172,7 @@ export default function Home() {
       dojo: warrior.dojos?.name || 'Independent',
       // Use actual win rate data
       victories: Math.round((warrior.win_rate || 0) * 10),
-      avatar: warrior.avatar_url || '/images/default-avatar.jpg',
+      avatar: warrior.avatar_url || '/images/default-avatar.png',
     };
   };
 

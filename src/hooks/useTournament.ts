@@ -57,7 +57,7 @@ export function useTournament() {
         .from('tournaments')
         .select(`
           *,
-          profiles:organizer_id(*),
+          dojos:organizer_id(*),
           participants:tournament_participants(count)
         `, { count: 'exact' });
 
@@ -120,8 +120,8 @@ export function useTournament() {
           entryFee: tournament.entry_fee,
           organizer: {
             id: tournament.organizer_id,
-            name: tournament.profiles?.username || 'Unknown',
-            avatar: tournament.profiles?.avatar_url || '/images/default-avatar.jpg',
+            name: tournament.dojos?.name || 'Unknown Dojo',
+            avatar: tournament.dojos?.banner_url || '/images/default-dojo.png',
           },
           banner: tournament.banner_url || '/images/default-tournament.jpg',
         };

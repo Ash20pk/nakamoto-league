@@ -63,6 +63,8 @@ const TournamentsPage = () => {
     return <BitcoinLoader />;
   }
 
+  console.log(tournaments);
+
   return (
     <>
       <Navbar />

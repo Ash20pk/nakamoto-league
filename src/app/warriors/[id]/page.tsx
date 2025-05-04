@@ -444,7 +444,7 @@ const WarriorProfile = () => {
                 {isEditMode ? (
                   <>
                     <Image
-                      src={avatarPreview || warrior.avatar_url || '/images/default-avatar.jpg'}
+                      src={avatarPreview || warrior.avatar_url || '/images/default-avatar.png'}
                       alt={warrior.name}
                       fill
                       className="object-cover"
@@ -466,7 +466,7 @@ const WarriorProfile = () => {
                   </>
                 ) : (
                   <Image
-                    src={warrior.avatar_url || '/images/default-avatar.jpg'}
+                    src={warrior.avatar_url || '/images/default-avatar.png'}
                     alt={warrior.name}
                     fill
                     className="object-cover"

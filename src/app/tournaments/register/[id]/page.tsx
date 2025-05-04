@@ -165,7 +165,7 @@ const TournamentRegistrationPage = () => {
           organizer: {
             id: tournamentData.organizer_id,
             name: tournamentData.profiles?.username || 'Unknown',
-            avatar: tournamentData.profiles?.avatar_url || '/images/default-avatar.jpg',
+            avatar: tournamentData.profiles?.avatar_url || '/images/default-avatar.png',
           },
           banner: tournamentData.banner_url || '/images/default-tournament.jpg',
         };

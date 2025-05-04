@@ -175,7 +175,7 @@ const WarriorsPage = () => {
                 <div className="relative h-48">
                   <div className="w-full h-full relative">
                     <Image
-                      src={warrior.avatar_url || '/images/default-avatar.jpg'}
+                      src={warrior.avatar_url || '/images/default-avatar.png'}
                       alt={warrior.name}
                       fill
                       className="object-cover"

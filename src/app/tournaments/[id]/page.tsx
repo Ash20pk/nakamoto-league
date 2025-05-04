@@ -74,7 +74,7 @@ const TournamentPage = () => {
           .from('tournaments')
           .select(`
             *,
-            profiles:organizer_id(id, username, avatar_url),
+            dojos:organizer_id(id, name, banner_url, location),
             tournament_participants(count)
           `)
           .eq('id', params.id)
@@ -132,8 +132,8 @@ const TournamentPage = () => {
           entryFee: tournamentData.entry_fee || 0,
           organizer: {
             id: tournamentData.organizer_id,
-            name: tournamentData.profiles?.username || 'Unknown',
-            avatar: tournamentData.profiles?.avatar_url || '/images/default-avatar.jpg',
+            name: tournamentData.dojos?.name || 'Unknown',
+            avatar: tournamentData.dojos?.banner_url || '/images/default-avatar.jpg',
           },
           banner: tournamentData.banner_url || '/images/default-tournament.jpg',
           rules: tournamentData.rules || [],

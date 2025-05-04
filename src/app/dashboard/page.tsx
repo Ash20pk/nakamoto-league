@@ -688,7 +688,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-purple-500/50">
                   <Image
-                    src={authState.warrior.avatar_url || '/images/default-avatar.jpg'}
+                    src={authState.warrior.avatar_url || '/images/default-avatar.png'}
                     alt={authState.warrior.name}
                     width={64}
                     height={64}

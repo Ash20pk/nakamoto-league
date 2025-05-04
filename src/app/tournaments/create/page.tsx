@@ -527,6 +527,11 @@ export default function CreateTournamentPage() {
       return;
     }
     
+    if (!authState.dojo) {
+      setError('You must have a registered dojo to create a tournament');
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
@@ -567,7 +572,7 @@ export default function CreateTournamentPage() {
         title: formData.title,
         description: formData.description,
         format: formData.format,
-        organizer_id: authState.user.id,
+        organizer_id: authState.dojo?.id,
         start_date: formData.startDate,
         end_date: formData.endDate,
         registration_deadline: formData.registrationDeadline,

@@ -167,7 +167,7 @@ const DojoPage = () => {
           .select(`
             id, title, start_date, end_date, format, banner_url
           `)
-          .eq('organizer_id', dojoData.owner_id)
+          .eq('organizer_id', dojoData.id)
           .order('start_date', { ascending: false });
           
         if (tournamentsError) throw tournamentsError;
@@ -1077,7 +1077,7 @@ const DojoPage = () => {
                         >
                           <div className="relative w-12 h-12 rounded-full overflow-hidden mr-3 border border-cyan/30">
                             <Image 
-                              src={warrior.avatar_url || '/images/default-avatar.jpg'}
+                              src={warrior.avatar_url || '/images/default-avatar.png'}
                               alt={warrior.name}
                               fill
                               className="object-cover"
@@ -1230,7 +1230,7 @@ const DojoPage = () => {
                         <div className="flex items-center">
                           <div className="relative w-14 h-14 rounded-full overflow-hidden mr-4 border border-cyan/30">
                             <Image 
-                              src={warrior.avatar_url || '/images/default-avatar.jpg'}
+                              src={warrior.avatar_url || '/images/default-avatar.png'}
                               alt={warrior.name}
                               fill
                               className="object-cover"
