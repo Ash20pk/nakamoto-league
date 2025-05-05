@@ -382,7 +382,6 @@ export interface Database {
         }
         Returns: Json
       }
-      [_ in never]: never
     }
     Enums: {
       tournament_format: TournamentFormat

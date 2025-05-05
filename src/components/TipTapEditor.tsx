@@ -25,7 +25,7 @@ import {
   Heading2, Heading3, Type, Eye, Code2, Underline as UnderlineIcon, 
   ChevronDown, ChevronUp, Clock, Maximize, Minimize, X, 
   Highlighter, Subscript as SubscriptIcon, Superscript as SuperscriptIcon,
-  Table as TableIcon, Palette, FontFamily as FontFamilyIcon
+  Table as TableIcon, Palette, Type as FontIcon
 } from 'lucide-react';
 import './TipTapEditor.css';
 
