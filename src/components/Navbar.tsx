@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Sword, Bell, Zap, User, Menu, X, ChevronDown, Flame, Check } from 'lucide-react';
+import { Sword, Bell, Zap, User, Menu, X, ChevronDown, Flame, Check, Book } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter, usePathname } from 'next/navigation';
@@ -174,6 +174,15 @@ const Navbar = ({ activeSection }: NavbarProps) => {
               <span className={`absolute bottom-0 left-0 w-full h-0.5 ${pathname === '/dojos' ? 'bg-cyan' : 'bg-red'} 
                 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300`}></span>
             </Link>
+            <Link 
+              href="/learn" 
+              className={`relative px-3 py-2 text-gray-300 hover:text-white transition-colors group overflow-hidden
+                ${pathname === '/learn' || pathname?.startsWith('/learn/') ? 'text-cyan font-medium' : ''}`}
+            >
+              <span className="relative z-10">Learn</span>
+              <span className={`absolute bottom-0 left-0 w-full h-0.5 ${pathname === '/learn' || pathname?.startsWith('/learn/') ? 'bg-cyan' : 'bg-red'} 
+                transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300`}></span>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -313,32 +322,38 @@ const Navbar = ({ activeSection }: NavbarProps) => {
       
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-black/95 backdrop-blur-md border-t border-gray-800/30 py-4 animate-expand-y overflow-hidden">
-          <div className="container mx-auto px-4 space-y-4">
-            <div className="border-l-2 border-red pl-4 space-y-4">
+        <div className={`md:hidden absolute top-16 left-0 right-0 bg-black/95 backdrop-blur-md border-b border-red/30 transition-all duration-300 ${
+            mobileMenuOpen ? 'max-h-96 py-4 opacity-100' : 'max-h-0 py-0 opacity-0 pointer-events-none'
+          } overflow-hidden`}>
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col space-y-2">
               <Link 
-                href="/tournaments"
-                className="flex items-center justify-between py-2 text-gray-300 hover:text-cyan"
+                href="/tournaments" 
+                className={`px-3 py-2 ${pathname === '/tournaments' ? 'text-cyan' : 'text-gray-300'} hover:text-white transition-colors`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span>Tournaments</span>
-                <Zap className="w-4 h-4 text-red" />
+                Tournaments
               </Link>
               <Link 
-                href="/warriors"
-                className="flex items-center justify-between py-2 text-gray-300 hover:text-cyan"
+                href="/warriors" 
+                className={`px-3 py-2 ${pathname === '/warriors' ? 'text-cyan' : 'text-gray-300'} hover:text-white transition-colors`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span>Warriors</span>
-                <Zap className="w-4 h-4 text-red" />
+                Warriors
               </Link>
               <Link 
-                href="/dojos"
-                className="flex items-center justify-between py-2 text-gray-300 hover:text-cyan"
+                href="/dojos" 
+                className={`px-3 py-2 ${pathname === '/dojos' ? 'text-cyan' : 'text-gray-300'} hover:text-white transition-colors`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span>Dojos</span>
-                <Zap className="w-4 h-4 text-red" />
+                Dojos
+              </Link>
+              <Link 
+                href="/learn" 
+                className={`px-3 py-2 ${pathname === '/learn' || pathname?.startsWith('/learn/') ? 'text-cyan' : 'text-gray-300'} hover:text-white transition-colors`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Learn
               </Link>
             </div>
           </div>

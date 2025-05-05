@@ -37,6 +37,82 @@ export interface Database {
           metadata?: Json | null
         }
       }
+      articles: {
+        Row: {
+          id: string
+          title: string
+          slug: string
+          content: string
+          summary: string | null
+          author: string
+          published_at: string
+          reading_time_minutes: number
+          banner_url: string | null
+          tags: string[]
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          slug: string
+          content: string
+          summary?: string | null
+          author: string
+          published_at?: string
+          reading_time_minutes?: number
+          banner_url?: string | null
+          tags?: string[]
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          slug?: string
+          content?: string
+          summary?: string | null
+          author?: string
+          published_at?: string
+          reading_time_minutes?: number
+          banner_url?: string | null
+          tags?: string[]
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      article_reads: {
+        Row: {
+          id: string
+          article_id: string
+          warrior_id: string
+          read_at: string
+          read_percentage: number
+          completed: boolean
+          xp_earned: number
+        }
+        Insert: {
+          id?: string
+          article_id: string
+          warrior_id: string
+          read_at?: string
+          read_percentage?: number
+          completed?: boolean
+          xp_earned?: number
+        }
+        Update: {
+          id?: string
+          article_id?: string
+          warrior_id?: string
+          read_at?: string
+          read_percentage?: number
+          completed?: boolean
+          xp_earned?: number
+        }
+      }
       dojos: {
         Row: {
           id: string
@@ -267,6 +343,45 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
+      get_admin_articles: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_tag?: string
+        }
+        Returns: Json
+      }
+      get_articles: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_tag?: string
+          p_warrior_id?: string
+        }
+        Returns: Json
+      }
+      get_article_by_slug: {
+        Args: {
+          p_slug: string
+          p_warrior_id?: string
+        }
+        Returns: Json
+      }
+      get_warrior_daily_article_stats: {
+        Args: {
+          p_warrior_id: string
+        }
+        Returns: Json
+      }
+      mark_article_read: {
+        Args: {
+          p_article_id: string
+          p_warrior_id: string
+          p_read_percentage?: number
+        }
+        Returns: Json
+      }
       [_ in never]: never
     }
     Enums: {

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, Key, ArrowRight } from 'lucide-react';
-import Navbar from '@/components/Navbar';
 import { useAuth } from '@/providers/AuthProvider';
 import Link from 'next/link';
 
@@ -64,7 +63,6 @@ export default function AdminLoginPage() {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen w-full flex items-center justify-center pt-16 px-4 relative overflow-hidden bg-black">
         {/* Background Elements */}
         <div className="absolute inset-0 bg-[url('/images/cyber-grid.png')] opacity-5 z-0"></div>

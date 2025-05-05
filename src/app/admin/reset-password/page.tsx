@@ -172,130 +172,133 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-4">
-      <div className="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-lg shadow-md border border-gray-700">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-cyan-400">Reset Password</h1>
-          <p className="mt-2 text-gray-400">Create a new secure password</p>
-        </div>
-
-        {message && (
-          <div className="p-4 bg-green-900/50 border border-green-700 rounded-md text-green-400">
-            {message}
+    <div className="min-h-screen bg-gray-900 text-white">
+      
+      <div className="flex items-center justify-center p-4 min-h-[calc(100vh-64px)]">
+        <div className="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-lg shadow-md border border-gray-700">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-cyan-400">Reset Password</h1>
+            <p className="mt-2 text-gray-400">Create a new secure password</p>
           </div>
-        )}
 
-        {error && (
-          <div className="p-4 bg-red-900/50 border border-red-700 rounded-md text-red-400">
-            {error}
-            {debugInfo && (
-              <pre className="mt-2 text-xs overflow-auto max-h-32">
-                {JSON.stringify(debugInfo, null, 2)}
-              </pre>
-            )}
-          </div>
-        )}
+          {message && (
+            <div className="p-4 bg-green-900/50 border border-green-700 rounded-md text-green-400">
+              {message}
+            </div>
+          )}
 
-        {isVerifying ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mb-4"></div>
-            <p className="text-gray-300">Verifying your reset link...</p>
-          </div>
-        ) : isValidToken ? (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-2">
-                New Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <KeyRound className="h-5 w-5 text-gray-500" />
+          {error && (
+            <div className="p-4 bg-red-900/50 border border-red-700 rounded-md text-red-400">
+              {error}
+              {debugInfo && (
+                <pre className="mt-2 text-xs overflow-auto max-h-32">
+                  {JSON.stringify(debugInfo, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
+
+          {isVerifying ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mb-4"></div>
+              <p className="text-gray-300">Verifying your reset link...</p>
+            </div>
+          ) : isValidToken ? (
+            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-2">
+                  New Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <KeyRound className="h-5 w-5 text-gray-500" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10 py-2 w-full bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    placeholder="Enter your new password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-400" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-500 hover:text-gray-400" />
+                    )}
+                  </button>
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 py-2 w-full bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="Enter your new password"
-                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-400 mb-2">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <KeyRound className="h-5 w-5 text-gray-500" />
+                  </div>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-10 py-2 w-full bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    placeholder="Confirm your new password"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 ${
+                    isLoading ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-400" />
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+                      Updating...
+                    </>
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-500 hover:text-gray-400" />
+                    'Reset Password'
                   )}
                 </button>
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-400 mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <KeyRound className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10 pr-10 py-2 w-full bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="Confirm your new password"
-                />
+              <div className="text-center text-sm">
+                <Link href="/admin/login" className="text-cyan-400 hover:text-cyan-300">
+                  Return to login
+                </Link>
               </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 ${
-                  isLoading ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
+            </form>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-red-400 text-5xl mb-4">⚠️</div>
+              <h2 className="text-xl font-semibold text-red-400 mb-4">Invalid Reset Link</h2>
+              <p className="text-gray-400 mb-6">
+                This password reset link is invalid or has expired.
+              </p>
+              <Link
+                href="/admin/forgot-password"
+                className="inline-block px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-md text-white"
               >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-                    Updating...
-                  </>
-                ) : (
-                  'Reset Password'
-                )}
-              </button>
-            </div>
-
-            <div className="text-center text-sm">
-              <Link href="/admin/login" className="text-cyan-400 hover:text-cyan-300">
-                Return to login
+                Request New Link
               </Link>
             </div>
-          </form>
-        ) : (
-          <div className="text-center py-8">
-            <div className="text-red-400 text-5xl mb-4">⚠️</div>
-            <h2 className="text-xl font-semibold text-red-400 mb-4">Invalid Reset Link</h2>
-            <p className="text-gray-400 mb-6">
-              This password reset link is invalid or has expired.
-            </p>
-            <Link
-              href="/admin/forgot-password"
-              className="inline-block px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-md text-white"
-            >
-              Request New Link
-            </Link>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

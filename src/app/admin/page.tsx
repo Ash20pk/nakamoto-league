@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
-import Navbar from '@/components/Navbar';
 import Link from 'next/link';
-import { Shield, Users, School, Plus, ArrowRight } from 'lucide-react';
+import { Shield, Users, School, Plus, ArrowRight, Book } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -49,15 +48,15 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-cyan border-t-transparent shadow-neon-cyan"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
       </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
+    <div className="min-h-screen bg-gray-900 text-white">
+      
       <div className="container mx-auto px-4 py-8 mt-16">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -93,6 +92,24 @@ export default function AdminDashboardPage() {
             </Link>
           </div>
 
+          {/* Article Management Card */}
+          <div className="bg-slate-800/50 border border-cyan-500/20 rounded-lg p-6 hover:border-cyan-500/40 transition-all">
+            <div className="flex items-center mb-4">
+              <div className="p-3 rounded-full bg-cyan-900/30 mr-4">
+                <Book className="h-6 w-6 text-cyan-400" />
+              </div>
+              <h2 className="text-xl font-semibold text-white">Article Management</h2>
+            </div>
+            <p className="text-gray-400 mb-6">Create, edit and manage educational articles for the Learn section.</p>
+            <Link 
+              href="/admin/articles" 
+              className="inline-flex items-center text-cyan-400 hover:text-cyan-300 transition-colors"
+            >
+              Manage Articles
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+
           {/* User Management Card */}
           <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-6 hover:border-purple-500/40 transition-all">
             <div className="flex items-center mb-4">
@@ -122,6 +139,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

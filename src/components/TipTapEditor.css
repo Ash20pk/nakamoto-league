@@ -1,0 +1,219 @@
+.tiptap-editor {
+  position: relative;
+  z-index: 1;
+}
+
+.tiptap-editor-wrapper {
+  position: relative;
+  height: 100%;
+}
+
+.tiptap-editor .ProseMirror {
+  outline: none;
+  min-height: 200px;
+  cursor: text !important;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 5;
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* Full-screen mode styles */
+:fullscreen {
+  background-color: #000;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+}
+
+:-webkit-full-screen {
+  background-color: #000;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+}
+
+:-moz-full-screen {
+  background-color: #000;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+}
+
+:-ms-fullscreen {
+  background-color: #000;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+}
+
+.fullscreen-mode {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+  background-color: #000 !important;
+  padding: 20px !important;
+  overflow: auto !important;
+}
+
+/* Ensure the editor takes full space in fullscreen mode */
+.tiptap-editor-wrapper:fullscreen,
+.tiptap-editor-wrapper:-webkit-full-screen,
+.tiptap-editor-wrapper:-moz-full-screen,
+.tiptap-editor-wrapper:-ms-fullscreen {
+  display: flex;
+  flex-direction: column;
+  background-color: #000;
+  padding: 20px;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+}
+
+:fullscreen .tiptap-editor-wrapper,
+:fullscreen .tiptap-editor,
+:-webkit-full-screen .tiptap-editor-wrapper,
+:-webkit-full-screen .tiptap-editor,
+:-moz-full-screen .tiptap-editor-wrapper,
+:-moz-full-screen .tiptap-editor,
+:-ms-fullscreen .tiptap-editor-wrapper,
+:-ms-fullscreen .tiptap-editor,
+.fullscreen-mode .tiptap-editor-wrapper,
+.fullscreen-mode .tiptap-editor {
+  height: calc(100vh - 100px) !important;
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+:fullscreen .EditorContent,
+:-webkit-full-screen .EditorContent,
+:-moz-full-screen .EditorContent,
+:-ms-fullscreen .EditorContent,
+.fullscreen-mode .EditorContent {
+  height: 100% !important;
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+:fullscreen .ProseMirror,
+:-webkit-full-screen .ProseMirror,
+:-moz-full-screen .ProseMirror,
+:-ms-fullscreen .ProseMirror,
+.fullscreen-mode .ProseMirror {
+  min-height: calc(100vh - 150px) !important;
+  max-width: none !important;
+  width: 100% !important;
+  padding: 1rem !important;
+  font-size: 1.1rem !important;
+  line-height: 1.6 !important;
+}
+
+/* Focus mode styles */
+.focus-mode .tiptap-editor-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.focus-mode .ProseMirror {
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.tiptap-editor .ProseMirror p {
+  margin-bottom: 1em;
+}
+
+.tiptap-editor .ProseMirror h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+  margin-top: 1em;
+}
+
+.tiptap-editor .ProseMirror h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+  margin-top: 1em;
+}
+
+.tiptap-editor .ProseMirror h3 {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+  margin-top: 1em;
+}
+
+.tiptap-editor .ProseMirror ul,
+.tiptap-editor .ProseMirror ol {
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.tiptap-editor .ProseMirror li {
+  margin-bottom: 0.5em;
+}
+
+.tiptap-editor .ProseMirror blockquote {
+  border-left: 3px solid #ccc;
+  padding-left: 1em;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+}
+
+.tiptap-editor .ProseMirror a {
+  color: #00b3e6;
+  text-decoration: underline;
+}
+
+.tiptap-editor .ProseMirror code {
+  background-color: rgba(97, 97, 97, 0.1);
+  border-radius: 3px;
+  padding: 0.2em 0.4em;
+  font-family: monospace;
+}
+
+.tiptap-editor .ProseMirror pre {
+  background-color: #2d2d2d;
+  color: #ccc;
+  font-family: monospace;
+  padding: 0.75em 1em;
+  border-radius: 5px;
+  margin-bottom: 1em;
+  overflow-x: auto;
+}
+
+.tiptap-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 5px;
+  margin: 1em 0;
+}
+
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

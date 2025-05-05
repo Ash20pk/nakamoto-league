@@ -2,7 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { WarriorStatsProvider } from '@/contexts/WarriorStatsContext';
-import Navbar from '@/components/Navbar';
+import ConditionalNavbar from '@/components/ConditionalNavbar';
 
 export const metadata: Metadata = {
   title: 'Nakamoto League - Web3 Hackathon Platform',
@@ -19,7 +19,7 @@ export default function RootLayout({
       <body className="min-h-screen">
         <AuthProvider>
           <WarriorStatsProvider>
-            <Navbar />
+            <ConditionalNavbar />
             {children}
           </WarriorStatsProvider>
         </AuthProvider>

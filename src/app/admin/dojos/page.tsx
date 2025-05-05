@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
-import Navbar from '@/components/Navbar';
 import { ArrowLeft, Mail, Lock, School, Plus, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import type { Database } from '@/lib/database.types';
@@ -168,8 +167,8 @@ export default function AdminDojosPage() {
   }
 
   return (
-    <>
-      <Navbar />
+    <div className="min-h-screen bg-gray-900 text-white">
+      
       <div className="container mx-auto px-4 py-8 mt-16">
         <div className="flex items-center mb-8">
           <Link href="/admin" className="text-gray-400 hover:text-white mr-4">
@@ -428,6 +427,6 @@ export default function AdminDojosPage() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

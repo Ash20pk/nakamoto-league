@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sword, Shield, Trophy, Zap, Users, Calendar, ArrowRight, Clock, MapPin, Eye, Check, Award, UserCircle, Camera, Building, Star, ChevronRight, Search, Flame, Shuffle } from 'lucide-react';
+import { Sword, Shield, Trophy, Zap, Users, Calendar, ArrowRight, Clock, MapPin, Eye, Check, Award, UserCircle, Camera, Building, Star, ChevronRight, Search, Flame, Shuffle, Book } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/providers/AuthProvider';
@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import BitcoinLoader from '@/components/BitcoinLoader';
 import { usePermissions } from '@/hooks/usePermissions';
 import { getEntityAvatar, fetchAndStoreRandomAvatar } from '@/utils/avatarUtils';
+import { useArticles } from '@/hooks/useArticles';
 
 // Import the AuthState type from AuthProvider
 import type { AuthState } from '@/providers/AuthProvider';
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const { authState, setAuthState } = useAuth();
   const { isWarrior, isDojo, canCreateTournament, canCreateDojo, canCreateBattle, canJoinTournament, canJoinDojo, canJoinBattle } = usePermissions();
   const supabase = createClientComponentClient<Database>();
+  const { dailyStats, fetchDailyStats } = useArticles();
   
   const [activeTournaments, setActiveTournaments] = useState<Tournament[]>([]);
   const [popularDojos, setPopularDojos] = useState<Dojo[]>([]);
@@ -69,7 +71,7 @@ export default function Dashboard() {
   const [maxDailyXP, setMaxDailyXP] = useState(500);
   const [userStreak, setUserStreak] = useState(authState.warrior?.streak || 0);
   const [dailyQuests, setDailyQuests] = useState([
-    { id: 1, name: 'Read Articles', description: 'Read 4 blockchain articles today', completed: 3, total: 4, xp: 50, icon: 'search', color: 'cyan' },
+    { id: 1, name: 'Read Articles', description: 'Read 4 blockchain articles today', completed: 0, total: 4, xp: 50, icon: 'search', color: 'cyan' },
     { id: 2, name: 'Join Tournament', description: 'Join 1 tournament this month', completed: 1, total: 1, xp: 100, icon: 'trophy', color: 'purple' },
     { id: 3, name: 'Daily Login', description: 'Login daily for rewards', completed: 5, total: 7, xp: 25, icon: 'award', color: 'yellow' },
     { id: 4, name: 'Visit Dojo', description: 'Visit your dojo page', completed: 0, total: 1, xp: 30, icon: 'clock', color: 'red' },
@@ -468,6 +470,34 @@ export default function Dashboard() {
   }, [supabase, authState.user]);
 
   useEffect(() => {
+    async function updateDailyQuests() {
+      if (dailyStats && authState.isAuthenticated) {
+        // Update the Read Articles quest with actual data
+        setDailyQuests(prevQuests => 
+          prevQuests.map(quest => 
+            quest.id === 1 
+              ? { 
+                  ...quest, 
+                  completed: Math.min(dailyStats.articles_completed, quest.total)
+                } 
+              : quest
+          )
+        );
+        
+        // Update user XP based on articles read
+        setUserXP(prevXP => {
+          // Calculate new XP from articles and other sources
+          const articlesXP = dailyStats.total_xp_earned || 0;
+          const otherXP = prevXP - (dailyQuests.find(q => q.id === 1)?.completed || 0) * (dailyQuests.find(q => q.id === 1)?.xp || 0);
+          return Math.min(otherXP + articlesXP, maxDailyXP);
+        });
+      }
+    }
+    
+    updateDailyQuests();
+  }, [dailyStats, authState.isAuthenticated]);
+
+  useEffect(() => {
     console.log('Dojo:', );
   }, []);
 
@@ -596,7 +626,9 @@ export default function Dashboard() {
                           <Icon className={`w-4 h-4 text-${quest.color}-400`} />
                         </div>
                         <div>
-                          <h5 className="font-bold text-white text-sm">{quest.name}</h5>
+                          <h5 className="font-bold text-white group-hover:text-cyan transition-colors">
+                            {quest.name}
+                          </h5>
                           <p className="text-xs text-gray-400">{quest.description}</p>
                         </div>
                       </div>
@@ -781,7 +813,10 @@ export default function Dashboard() {
                   }`}
                 >
                   {checkInLoading ? (
-                    <BitcoinLoader />
+                    <span className="flex items-center">
+                      <div className="animate-spin w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full mr-2"></div>
+                      <span className="text-xs">Loading...</span>
+                    </span>
                   ) : authState.warrior.last_check_in === new Date().toISOString().split('T')[0] ? (
                     <>
                       <Check size={16} className="text-green-400" />
