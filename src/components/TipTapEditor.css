@@ -316,7 +316,8 @@
 .focus-mode .tiptap-editor-wrapper {
   max-width: 750px;
   margin: 0 auto;
-  height: calc(100vh - 120px);
+  height: auto;
+  min-height: calc(100vh - 120px);
 }
 
 .focus-mode .ProseMirror {
@@ -326,10 +327,13 @@
   padding: 2rem !important;
   min-height: calc(100vh - 180px) !important;
   background: transparent !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 .focus-mode .tiptap-editor {
-  height: 100% !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 /* Fullscreen mode styles */

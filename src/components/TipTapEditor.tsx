@@ -12,9 +12,9 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import { 
-  Bold, Italic, List, ListOrdered, Quote, Code, Link as LinkIcon, 
+  Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Quote, Code, Link as LinkIcon, 
   Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Heading1, 
-  Heading2, Heading3, Type, Maximize, Minimize, X,
+  Heading2, Heading3, Type, Maximize, Minimize, X, Pilcrow,
   Highlighter, Table as TableIcon, Clock, Code2, ChevronDown, ChevronUp
 } from 'lucide-react';
 import MarkdownPreview from './MarkdownPreview';
@@ -186,6 +186,7 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
     bold: () => editor?.chain().focus().toggleBold().run(),
     italic: () => editor?.chain().focus().toggleItalic().run(),
     underline: () => editor?.chain().focus().toggleUnderline().run(),
+    paragraph: () => editor?.chain().focus().setParagraph().run(),
     h1: () => editor?.chain().focus().toggleHeading({ level: 1 }).run(),
     h2: () => editor?.chain().focus().toggleHeading({ level: 2 }).run(),
     h3: () => editor?.chain().focus().toggleHeading({ level: 3 }).run(),
@@ -396,7 +397,7 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
                 className={`p-1.5 hover:bg-gray-700 rounded ${editor.isActive('underline') ? 'bg-gray-700' : ''}`}
                 title="Underline"
               >
-                <Code className="w-4 h-4" />
+                <UnderlineIcon className="w-4 h-4" />
               </button>
               <span className="border-r border-gray-700 mx-1"></span>
               <button 
@@ -424,13 +425,14 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
             
             <EditorContent 
               editor={editor} 
-              className={`bg-black text-white p-6 rounded outline-none overflow-auto text-lg leading-relaxed w-full tiptap-editor ${
-                focusMode ? 'max-w-none mx-auto' : ''
+              className={`bg-black text-white p-6 rounded outline-none text-lg leading-relaxed w-full tiptap-editor ${
+                focusMode ? 'max-w-none mx-auto overflow-visible' : 'overflow-auto'
               }`}
               style={{ 
-                minHeight: 'calc(100vh - 240px)',
+                minHeight: focusMode ? 'calc(100vh - 180px)' : 'calc(100vh - 240px)',
                 wordWrap: 'break-word',
                 cursor: 'text',
+                height: focusMode ? 'auto' : undefined,
               }}
               onClick={() => editor?.commands.focus()}
               onFocus={handleEditorFocus}
@@ -462,7 +464,7 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
               className={`p-1.5 hover:bg-gray-700 rounded ${editor.isActive('underline') ? 'bg-gray-700' : ''}`}
               title="Underline"
             >
-              <Code className="w-4 h-4" />
+              <UnderlineIcon className="w-4 h-4" />
             </button>
             <span className="border-r border-gray-700 mx-2"></span>
             <button 
@@ -595,9 +597,10 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
         </div>
       )}
       
-      {/* Minimal bottom toolbar for focus mode - sleek floating design */}
+      {/* Comprehensive floating toolbar for focus mode - sleek design with all options */}
       {!isMarkdownMode && focusMode && editor && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 rounded-full p-2 flex items-center gap-2 border border-gray-700 opacity-30 hover:opacity-100 transition-opacity shadow-lg">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 border-2 border-gray-600 rounded-full p-3 flex items-center gap-1 opacity-90 hover:opacity-100 transition-all duration-200 shadow-2xl z-[9999] backdrop-blur-sm">
+          {/* Basic formatting */}
           <button 
             onClick={commands.bold}
             className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('bold') ? 'bg-gray-700' : ''}`}
@@ -613,27 +616,48 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
             <Italic className="w-4 h-4" />
           </button>
           <button 
+            onClick={commands.underline}
+            className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('underline') ? 'bg-gray-700' : ''}`}
+            title="Underline"
+          >
+            <UnderlineIcon className="w-4 h-4" />
+          </button>
+          
+          <span className="border-r border-gray-700 mx-1 h-6"></span>
+          
+          {/* Headers and paragraph */}
+          <button 
+            onClick={commands.paragraph}
+            className={`p-1.5 hover:bg-gray-700 rounded-full ${!editor.isActive('heading') ? 'bg-gray-700' : ''}`}
+            title="Paragraph"
+          >
+            <Pilcrow className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={commands.h1}
+            className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-700' : ''}`}
+            title="Heading 1"
+          >
+            <Heading1 className="w-4 h-4" />
+          </button>
+          <button 
             onClick={commands.h2}
             className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-700' : ''}`}
-            title="Heading"
+            title="Heading 2"
           >
             <Heading2 className="w-4 h-4" />
           </button>
           <button 
-            onClick={commands.link}
-            className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('link') ? 'bg-gray-700' : ''}`}
-            title="Link"
+            onClick={commands.h3}
+            className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-700' : ''}`}
+            title="Heading 3"
           >
-            <LinkIcon className="w-4 h-4" />
+            <Heading3 className="w-4 h-4" />
           </button>
+          
           <span className="border-r border-gray-700 mx-1 h-6"></span>
-          <button 
-            onClick={commands.highlight}
-            className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('highlight') ? 'bg-gray-700' : ''}`}
-            title="Highlight"
-          >
-            <Highlighter className="w-4 h-4" />
-          </button>
+          
+          {/* Lists */}
           <button 
             onClick={commands.bulletList}
             className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('bulletList') ? 'bg-gray-700' : ''}`}
@@ -641,6 +665,17 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
           >
             <List className="w-4 h-4" />
           </button>
+          <button 
+            onClick={commands.orderedList}
+            className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('orderedList') ? 'bg-gray-700' : ''}`}
+            title="Numbered List"
+          >
+            <ListOrdered className="w-4 h-4" />
+          </button>
+          
+          <span className="border-r border-gray-700 mx-1 h-6"></span>
+          
+          {/* Advanced formatting */}
           <button 
             onClick={commands.blockquote}
             className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('blockquote') ? 'bg-gray-700' : ''}`}
@@ -651,9 +686,23 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
           <button 
             onClick={commands.codeBlock}
             className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('codeBlock') ? 'bg-gray-700' : ''}`}
-            title="Code"
+            title="Code Block"
           >
             <Code className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={commands.highlight}
+            className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('highlight') ? 'bg-gray-700' : ''}`}
+            title="Highlight"
+          >
+            <Highlighter className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={commands.link}
+            className={`p-1.5 hover:bg-gray-700 rounded-full ${editor.isActive('link') ? 'bg-gray-700' : ''}`}
+            title="Link"
+          >
+            <LinkIcon className="w-4 h-4" />
           </button>
           <button 
             onClick={commands.table}
