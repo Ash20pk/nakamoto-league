@@ -574,7 +574,6 @@ export default function CreateArticlePage() {
                     onChange={setContent} 
                     onFocus={handleEditorFocus}
                     onFullScreenChange={setIsFullScreen}
-                    showPreview={isFullScreen && showPreview}
                     title={title}
                     author={author}
                     bannerUrl={bannerPreview}
@@ -600,7 +599,7 @@ export default function CreateArticlePage() {
                   </div>
                   <div className="flex-1 overflow-auto">
                     <MarkdownPreview 
-                      markdown={content} 
+                      htmlContent={content} 
                       title={title} 
                       author={author} 
                       readingTime={readingTime}

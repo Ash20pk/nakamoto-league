@@ -1,6 +1,8 @@
+/* TipTap Editor Modern Styles */
 .tiptap-editor {
   position: relative;
   z-index: 1;
+  height: 100%;
 }
 
 .tiptap-editor-wrapper {
@@ -8,18 +10,189 @@
   height: 100%;
 }
 
-.tiptap-editor .ProseMirror {
+/* ProseMirror Core Styles */
+.ProseMirror {
   outline: none;
-  min-height: 200px;
-  cursor: text !important;
-  padding: 0;
+  padding: 1.5rem;
+  min-height: 500px;
+  color: white;
+  background: transparent;
+  line-height: 1.7;
+  font-size: 1.1rem;
+  cursor: text;
   width: 100%;
   height: 100%;
   position: relative;
   z-index: 5;
-  pointer-events: auto !important;
-  user-select: text !important;
-  -webkit-user-select: text !important;
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Typography Styles */
+.ProseMirror p {
+  margin: 0.75rem 0;
+  color: #e5e7eb;
+}
+
+.ProseMirror h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 2rem 0 1rem 0;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.ProseMirror h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.75rem 0;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.ProseMirror h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem 0;
+  color: #ffffff;
+  line-height: 1.4;
+}
+
+.ProseMirror strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ProseMirror em {
+  font-style: italic;
+  color: #e5e7eb;
+}
+
+.ProseMirror u {
+  text-decoration: underline;
+}
+
+.ProseMirror code {
+  background: #374151;
+  color: #fbbf24;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+}
+
+.ProseMirror pre {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #374151;
+}
+
+.ProseMirror pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+.ProseMirror blockquote {
+  border-left: 4px solid #06b6d4;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #d1d5db;
+  font-style: italic;
+  background: rgba(6, 182, 212, 0.1);
+  border-radius: 0 0.375rem 0.375rem 0;
+  padding: 1rem;
+}
+
+.ProseMirror ul {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+.ProseMirror ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+.ProseMirror li {
+  margin: 0.5rem 0;
+  color: #e5e7eb;
+}
+
+.ProseMirror ul li {
+  list-style-type: disc;
+}
+
+.ProseMirror ol li {
+  list-style-type: decimal;
+}
+
+.ProseMirror a {
+  color: #06b6d4;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ProseMirror a:hover {
+  color: #0891b2;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  display: block;
+}
+
+.ProseMirror mark {
+  background: #fbbf24;
+  color: #1f2937;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  border: 1px solid #374151;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+  border: 1px solid #374151;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.ProseMirror th {
+  background: #374151;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.ProseMirror td {
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+/* Placeholder styling */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #6b7280;
+  pointer-events: none;
+  height: 0;
 }
 
 /* Full-screen mode styles */
@@ -127,15 +300,57 @@
   line-height: 1.6 !important;
 }
 
-/* Focus mode styles */
+/* Focus mode styles - sleek and minimal */
+.focus-mode {
+  background-color: #000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 2rem;
+  overflow: auto;
+}
+
 .focus-mode .tiptap-editor-wrapper {
-  max-width: 800px;
+  max-width: 750px;
   margin: 0 auto;
+  height: calc(100vh - 120px);
 }
 
 .focus-mode .ProseMirror {
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: 1.25rem !important;
+  line-height: 1.7 !important;
+  max-width: none !important;
+  padding: 2rem !important;
+  min-height: calc(100vh - 180px) !important;
+  background: transparent !important;
+}
+
+.focus-mode .tiptap-editor {
+  height: 100% !important;
+}
+
+/* Fullscreen mode styles */
+.fullscreen-mode {
+  background-color: #000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 2rem;
+  overflow: auto;
+}
+
+.fullscreen-mode .tiptap-editor-wrapper {
+  height: calc(100vh - 120px);
+}
+
+.fullscreen-mode .ProseMirror {
+  min-height: calc(100vh - 180px) !important;
 }
 
 .tiptap-editor .ProseMirror p {
