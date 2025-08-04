@@ -53,6 +53,7 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
   const [focusMode, setFocusMode] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Simple markdown to HTML conversion for initialization
   const markdownToHtml = (markdown: string): string => {
@@ -166,7 +167,15 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
 
   // Update word count
   const updateWordCount = (html: string) => {
+    if (!html || html === '<p></p>' || html === '<p><br></p>') {
+      setWordCount(0);
+      return;
+    }
     const text = html.replace(/<[^>]*>/g, '').trim();
+    if (!text) {
+      setWordCount(0);
+      return;
+    }
     const words = text.split(/\s+/).filter(word => word.length > 0);
     setWordCount(words.length);
   };
@@ -177,9 +186,29 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
       const html = markdownToHtml(initialValue);
       editor.commands.setContent(html);
       setMarkdownContent(initialValue);
+      updateWordCount(html); // Initialize word count
       setIsInitialized(true);
     }
   }, [editor, initialValue, isInitialized]);
+
+  // Initialize word count when editor is ready
+  useEffect(() => {
+    if (editor && !isInitialized) {
+      const html = editor.getHTML();
+      updateWordCount(html);
+    }
+  }, [editor, isInitialized]);
+
+  // Update current time every second when in focus mode
+  useEffect(() => {
+    if (focusMode) {
+      const interval = setInterval(() => {
+        setCurrentTime(new Date());
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [focusMode]);
 
   // Editor commands
   const commands = {
@@ -263,6 +292,10 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
     if (onFocus) onFocus();
     if (!focusMode) {
       setFocusMode(true);
+      // Always set full screen when entering focus mode
+      if (onFullScreenChange) {
+        onFullScreenChange(true);
+      }
     }
   };
 
@@ -310,7 +343,7 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
             </span>
             <span className="flex items-center">
               <Clock className="w-3.5 h-3.5 mr-1 text-gray-500" />
-              <span className="font-semibold">{Math.max(1, Math.ceil(wordCount / 200))}</span> min read
+              <span className="font-semibold">{wordCount > 0 ? Math.max(1, Math.ceil(wordCount / 200)) : 0}</span> min read
             </span>
           </div>
           <button
@@ -331,19 +364,30 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
         </div>
       )}
       
-      {/* Focus mode header - minimal and sleek */}
+      {/* Focus mode header - minimal and sleek with system time */}
       {focusMode && (
         <div className="flex justify-between items-center mb-2 opacity-30 hover:opacity-100 transition-opacity">
           <div className="flex items-center text-sm text-gray-400">
-            <span className="mr-4">
-              <span className="font-semibold">{wordCount}</span> words
-            </span>
-            <span className="flex items-center">
-              <Clock className="w-3.5 h-3.5 mr-1 text-gray-500" />
-              <span className="font-semibold">{Math.max(1, Math.ceil(wordCount / 200))}</span> min read
+            <span className="font-semibold">{wordCount}</span>
+            <span className="ml-1 text-gray-500">words</span>
+          </div>
+          
+          <div className="flex items-center text-sm text-gray-400">
+            <span className="font-semibold text-lg">
+              {currentTime.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+              })}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          
+          <div className="flex items-center gap-4">
+            <div className="flex items-center text-sm text-gray-400">
+              <Clock className="w-3.5 h-3.5 mr-1 text-gray-500" />
+              <span className="font-semibold">{wordCount > 0 ? Math.max(1, Math.ceil(wordCount / 200)) : 0}</span>
+              <span className="ml-1 text-gray-500">min read</span>
+            </div>
             <button
               onClick={toggleFocusMode}
               className="flex items-center gap-1 text-sm bg-gray-800 hover:bg-gray-700 text-cyan px-3 py-1 rounded"
