@@ -365,20 +365,6 @@ export default function EditArticlePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setIsFullScreen(!isFullScreen)}
-                className={`flex items-center px-3 py-1.5 rounded ${
-                  isFullScreen ? 'bg-gray-700 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }`}
-              >
-                {isFullScreen ? (
-                  <Minimize className="w-4 h-4 mr-1.5" />
-                ) : (
-                  <Maximize className="w-4 h-4 mr-1.5" />
-                )}
-                Fullscreen
-              </button>
-              <button
-                type="button"
                 onClick={updateArticle}
                 disabled={saving}
                 className="flex items-center bg-cyan hover:bg-cyan-600 text-white px-4 py-1.5 rounded"

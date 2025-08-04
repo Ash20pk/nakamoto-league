@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import type { Database } from '@/lib/database.types';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
@@ -14,7 +16,7 @@ import TableHeader from '@tiptap/extension-table-header';
 import { 
   Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Quote, Code, Link as LinkIcon, 
   Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Heading1, 
-  Heading2, Heading3, Type, Maximize, Minimize, X, Pilcrow,
+  Heading2, Heading3, Type, Maximize, Minimize, X, Pilcrow, Trash2, Edit3,
   Highlighter, Table as TableIcon, Clock, Code2, ChevronDown, ChevronUp
 } from 'lucide-react';
 import MarkdownPreview from './MarkdownPreview';
@@ -54,6 +56,33 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const supabase = createClientComponentClient<Database>();
+
+  // Upload image to Supabase storage via API
+  const uploadImageToStorage = async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Upload error:', errorData);
+        return null;
+      }
+
+      const data = await response.json();
+      return data.imageUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
 
   // Simple markdown to HTML conversion for initialization
   const markdownToHtml = (markdown: string): string => {
@@ -98,17 +127,17 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
         },
         bulletList: {
           HTMLAttributes: {
-            class: 'tiptap-bullet-list',
+            // Remove custom classes to prevent conflicts
           },
         },
         orderedList: {
           HTMLAttributes: {
-            class: 'tiptap-ordered-list',
+            // Remove custom classes to prevent conflicts
           },
         },
         listItem: {
           HTMLAttributes: {
-            class: 'tiptap-list-item',
+            // Remove custom classes to prevent conflicts
           },
         },
       }),
@@ -117,13 +146,15 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
       }),
       Image.configure({
         HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-lg my-4',
+          // Remove Tailwind classes to prevent conflicts on learn page
         },
+        allowBase64: true,
+        inline: true,
       }),
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-cyan-400 underline cursor-pointer',
+          // Remove Tailwind classes to prevent conflicts on learn page
         },
       }),
       Underline,
@@ -230,11 +261,80 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
         editor?.chain().focus().setLink({ href: url }).run();
       }
     },
-    image: () => {
+    image: async () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          setUploadingImage(true);
+          
+          try {
+            const imageUrl = await uploadImageToStorage(file);
+            if (imageUrl) {
+              editor?.chain().focus().setImage({ src: imageUrl }).run();
+            } else {
+              alert('Failed to upload image. Please try again.');
+            }
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            alert('Failed to upload image. Please try again.');
+          } finally {
+            setUploadingImage(false);
+          }
+        }
+      };
+      input.click();
+    },
+    imageUrl: () => {
       const url = window.prompt('Enter image URL:');
       if (url) {
         editor?.chain().focus().setImage({ src: url }).run();
       }
+    },
+    editImage: () => {
+      const choice = window.confirm('Upload a new image? Click OK to upload, Cancel to enter URL.');
+      
+      if (choice) {
+        // Upload new image
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            setUploadingImage(true);
+            
+            try {
+              const imageUrl = await uploadImageToStorage(file);
+              if (imageUrl) {
+                // Replace with actual image
+                editor?.chain().focus().updateAttributes('image', { 
+                  src: imageUrl
+                }).run();
+              } else {
+                alert('Failed to upload image. Please try again.');
+              }
+            } catch (error) {
+              console.error('Error uploading image:', error);
+              alert('Failed to upload image. Please try again.');
+            } finally {
+              setUploadingImage(false);
+            }
+          }
+        };
+        input.click();
+      } else {
+        // Enter URL
+        const url = window.prompt('Enter new image URL:');
+        if (url) {
+          editor?.chain().focus().updateAttributes('image', { src: url }).run();
+        }
+      }
+    },
+    deleteImage: () => {
+      editor?.chain().focus().deleteSelection().run();
     },
     table: () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
     alignLeft: () => editor?.chain().focus().setTextAlign('left').run(),
@@ -466,6 +566,66 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
                 <Heading3 className="w-4 h-4" />
               </button>
             </BubbleMenu>
+
+            {/* Image bubble menu - appears when image is selected */}
+            <BubbleMenu 
+              editor={editor} 
+              shouldShow={({ editor }) => {
+                return editor.isActive('image');
+              }}
+              tippyOptions={{ 
+                duration: 100,
+                placement: 'top',
+                theme: 'dark',
+                zIndex: 40,
+              }}
+              className="bg-gray-800 rounded-lg shadow-lg p-2 flex gap-1 border border-gray-700 backdrop-blur-sm"
+            >
+              <button 
+                onClick={commands.editImage}
+                className="p-1.5 hover:bg-gray-700 rounded"
+                title="Edit Image URL"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={commands.image}
+                className="p-1.5 hover:bg-gray-700 rounded"
+                title="Replace Image"
+              >
+                <ImageIcon className="w-4 h-4" />
+              </button>
+              <span className="border-r border-gray-700 mx-1"></span>
+              <button 
+                onClick={commands.alignLeft}
+                className={`p-1.5 hover:bg-gray-700 rounded ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-700' : ''}`}
+                title="Align Left"
+              >
+                <AlignLeft className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={commands.alignCenter}
+                className={`p-1.5 hover:bg-gray-700 rounded ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-700' : ''}`}
+                title="Align Center"
+              >
+                <AlignCenter className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={commands.alignRight}
+                className={`p-1.5 hover:bg-gray-700 rounded ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-700' : ''}`}
+                title="Align Right"
+              >
+                <AlignRight className="w-4 h-4" />
+              </button>
+              <span className="border-r border-gray-700 mx-1"></span>
+              <button 
+                onClick={commands.deleteImage}
+                className="p-1.5 hover:bg-red-600 rounded text-red-400 hover:text-white"
+                title="Delete Image"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </BubbleMenu>
             
             <EditorContent 
               editor={editor} 
@@ -594,10 +754,15 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
               </button>
               <button 
                 onClick={commands.image}
-                className="p-1.5 hover:bg-gray-700 rounded"
+                className="p-1.5 hover:bg-gray-700 rounded relative"
                 title="Insert Image"
+                disabled={uploadingImage}
               >
-                <ImageIcon className="w-4 h-4" />
+                {uploadingImage ? (
+                  <div className="w-4 h-4 border-2 border-cyan border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <ImageIcon className="w-4 h-4" />
+                )}
               </button>
               <button 
                 onClick={commands.table}
@@ -747,6 +912,18 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
             title="Link"
           >
             <LinkIcon className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={commands.image}
+            className="p-1.5 hover:bg-gray-700 rounded-full relative"
+            title="Upload Image"
+            disabled={uploadingImage}
+          >
+            {uploadingImage ? (
+              <div className="w-4 h-4 border-2 border-cyan border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <ImageIcon className="w-4 h-4" />
+            )}
           </button>
           <button 
             onClick={commands.table}

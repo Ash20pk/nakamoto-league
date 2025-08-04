@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['your-supabase-storage-url.supabase.co'],
+    domains: ['ctoihotqtanjsgytwwzk.supabase.co'],
   },
   typescript: {
     ignoreBuildErrors: true,
