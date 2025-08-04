@@ -113,7 +113,7 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
       .join('\n');
 
     // Wrap lists
-    html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+    html = html.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
     
     return html || '<p></p>';
   };
@@ -368,10 +368,10 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
       .replace(/<u[^>]*>(.*?)<\/u>/gi, '_$1_')
       .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
       .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n\n')
-      .replace(/<ul[^>]*>(.*?)<\/ul>/gis, (match, content) => {
+      .replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
         return content.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n') + '\n';
       })
-      .replace(/<ol[^>]*>(.*?)<\/ol>/gis, (match, content) => {
+      .replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
         let counter = 1;
         return content.replace(/<li[^>]*>(.*?)<\/li>/gi, () => `${counter++}. $1\n`) + '\n';
       })

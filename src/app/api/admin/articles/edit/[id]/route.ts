@@ -5,10 +5,11 @@ import type { Database } from '@/lib/database.types';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
+    const cookiesInstance = cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookiesInstance });
     
     // Check if admin token cookie exists
     const adminToken = request.cookies.get('admin_token')?.value;
@@ -30,7 +31,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const articleId = params.id;
+    const { id: articleId } = await params;
     
     if (!articleId) {
       return NextResponse.json({ error: 'Article ID is required' }, { status: 400 });
@@ -61,10 +62,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
+    const cookiesInstance = cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookiesInstance });
     
     // Check if admin token cookie exists
     const adminToken = request.cookies.get('admin_token')?.value;
@@ -86,7 +88,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const articleId = params.id;
+    const { id: articleId } = await params;
     
     if (!articleId) {
       return NextResponse.json({ error: 'Article ID is required' }, { status: 400 });

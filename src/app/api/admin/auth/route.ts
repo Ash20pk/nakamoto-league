@@ -148,7 +148,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = createRouteHandlerClient<Database>({ cookies });
+  const cookiesInstance = cookies();
+  const supabase = createRouteHandlerClient<Database>({ cookies: () => cookiesInstance });
   
   try {
     // Check if admin token cookie exists

@@ -44,7 +44,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
       })
       .filter(p => p)
       .join('\n')
-      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+      .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
   };
 
   // Determine content to display
